@@ -1,0 +1,17 @@
+# Secrets and per-host configuration. Never commit these.
+.env
+bridge/config.json
+couchdb/local.d/docker.ini
+caddy/data/
+caddy/config/
+
+# Vault content must never land in this repo.
+/vaults/
+/srv/
+
+__pycache__/
+*.pyc
+.venv/
+
+# Upstream helper scripts downloaded by scripts/couchdb-provision.sh.
+.cache/

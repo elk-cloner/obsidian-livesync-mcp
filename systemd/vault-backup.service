@@ -1,0 +1,17 @@
+[Unit]
+Description=One-way rclone backup of the Obsidian vault mirror to Google Drive
+Documentation=file:///opt/obsidian-self-host/docs/runbook.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/obsidian-self-host
+ExecStart=/usr/bin/flock -n /run/vault-backup.lock /opt/obsidian-self-host/scripts/vault-backup.sh
+TimeoutStartSec=4h
+# Backups must never compete with interactive work.
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=Commit Obsidian vault mirror to git and push off-server
+Documentation=file:///opt/obsidian-self-host/docs/runbook.md
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/obsidian-self-host
+# flock keeps a slow push from overlapping the next tick.
+ExecStart=/usr/bin/flock -n /run/vault-git.lock /opt/obsidian-self-host/scripts/vault-git-commit.sh
+# The SSH deploy key that can push to the private GitHub repos.
+Environment=GIT_SSH_COMMAND=ssh -i /root/.ssh/vault_deploy -o IdentitiesOnly=yes
+TimeoutStartSec=10min
+
+[Install]
+WantedBy=multi-user.target

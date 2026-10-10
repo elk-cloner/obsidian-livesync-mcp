@@ -1,0 +1,37 @@
+{
+	email {$ACME_EMAIL}
+}
+
+# CouchDB must sit at the root of its own subdomain. Serving it under a
+# subpath breaks LiveSync with "404 Database not found" unless /_session is
+# separately proxied and the path rewritten.
+couch.{$DOMAIN} {
+	reverse_proxy couchdb:5984 {
+		# LiveSync's fast-fetch streams; buffering stalls the progress bar.
+		flush_interval -1
+	}
+
+	# Chunked note batches exceed Caddy's comfort zone on big initial uploads.
+	request_body {
+		max_size 100MB
+	}
+
+	# No CORS headers here on purpose. CouchDB owns CORS (see
+	# couchdb/local.d/10-livesync.ini); adding a second set of
+	# Access-Control-* headers makes every preflight fail.
+
+	log {
+		output file /data/access-couch.log
+	}
+}
+
+mcp.{$DOMAIN} {
+	reverse_proxy mcp:8000 {
+		# Streamable HTTP transport -- responses must not be buffered.
+		flush_interval -1
+	}
+
+	log {
+		output file /data/access-mcp.log
+	}
+}
