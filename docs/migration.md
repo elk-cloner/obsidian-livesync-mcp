@@ -1,5 +1,9 @@
 # Migrating vaults off Google Drive
 
+Read this before adding a vault whose notes currently sync through Google
+Drive. It covers getting the notes out of Drive safely; the vault itself is
+then added the normal way, with [`vaults.md`](vaults.md).
+
 The one rule: **never point LiveSync at a directory Google Drive is still
 syncing.** Two sync engines writing the same files produce conflict copies
 faster than either can resolve them. Breaking the Drive link comes first,
@@ -30,15 +34,16 @@ cp -a "<drive-folder>/<vault>" ~/Vaults/<vault>
 Copy, don't move — the Drive folder stays as the rollback. Do not delete it
 until a week of clean sync has passed.
 
-### 3. Upload through LiveSync
+### 3. Add the vault
 
-Open `~/Vaults/<vault>` in Obsidian as a vault, then follow
-[`onboarding.md`](onboarding.md) for the first device. Let the full upload
-finish.
+Follow [`vaults.md`](vaults.md): run `sudo ./scripts/add-vault.sh <vault>`,
+then for the first device open `~/Vaults/<vault>` in Obsidian as a vault and
+let the full upload finish, then run `add-vault.sh` again so the bridge mirrors
+it to the server.
 
 ### 4. Verify against the mirror
 
-Once the bridge is running:
+Once the second `add-vault.sh` run has finished:
 
 ```bash
 # Counts should match what you noted in step 1.
@@ -74,8 +79,8 @@ Within the first week, before deleting anything from Drive:
 
 1. Disable the LiveSync plugin on every device.
 2. Reopen the original vault folder inside Drive.
-3. Delete the CouchDB database (`curl -X DELETE -u … https://couch.$DOMAIN/<vault>`)
-   and the `/srv/vaults/<vault>` directory.
+3. Remove it from the server: `sudo ./scripts/remove-vault.sh <vault> --purge`,
+   then delete the parked copy under `/srv/vaults-removed/`.
 
 Nothing is lost, because the Drive copy was never touched.
 

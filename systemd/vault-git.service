@@ -1,5 +1,5 @@
 [Unit]
-Description=Commit Obsidian vault mirror to git and push off-server
+Description=Commit the Obsidian vault mirror to local git history (and GitHub if enabled)
 Documentation=file:///opt/obsidian-self-host/docs/runbook.md
 After=docker.service
 Wants=docker.service
@@ -9,8 +9,9 @@ Type=oneshot
 WorkingDirectory=/opt/obsidian-self-host
 # flock keeps a slow push from overlapping the next tick.
 ExecStart=/usr/bin/flock -n /run/vault-git.lock /opt/obsidian-self-host/scripts/vault-git-commit.sh
-# The SSH deploy key that can push to the private GitHub repos.
-Environment=GIT_SSH_COMMAND=ssh -i /root/.ssh/vault_deploy -o IdentitiesOnly=yes
+# systemd sets no HOME for system services; gh keeps root's login (from
+# `sudo gh auth login`) under /root/.config/gh. Only used when GIT_PUSH=github.
+Environment=HOME=/root
 TimeoutStartSec=10min
 
 [Install]

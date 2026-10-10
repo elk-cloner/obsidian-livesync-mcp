@@ -36,8 +36,8 @@ in advance.
 
 ## First device
 
-This device must already hold the authoritative copy of the vault, because its
-first sync is a full upload.
+This device holds the vault's starting content (an empty vault, for a new one),
+because its first sync is a full upload.
 
 1. Obsidian → Settings → Community plugins → browse → **Self-hosted LiveSync**
    → install and enable.
@@ -82,10 +82,9 @@ Same as the first device, except it should **not** do the initial upload — let
 an existing vault down. If both machines upload independently you get two
 divergent document trees in one database.
 
-## Order of operations, once per vault
+## Where this fits
 
-1. Provision the CouchDB database (`scripts/couchdb-provision.sh`).
-2. Onboard the first device, which uploads the vault.
-3. Start the bridge and confirm `/srv/vaults/<vault>` fills with plain files.
-4. Onboard the remaining devices from fresh Setup URIs.
-5. Only then move on to the next vault.
+Onboarding happens inside adding a vault ([`vaults.md`](vaults.md)): run
+`add-vault.sh` once to create the database, onboard the first device, run
+`add-vault.sh` again to connect the server, then onboard the remaining devices.
+Finish one vault before starting the next.

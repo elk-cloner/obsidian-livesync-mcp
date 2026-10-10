@@ -81,7 +81,7 @@
         <text class="lbl" x="785" y="530">hourly</text>
 
         <line class="edge job" x1="375" y1="652" x2="375" y2="728" marker-end="url(#arr)"/>
-        <text class="lbl" x="385" y="708">git push (SSH)</text>
+        <text class="lbl" x="385" y="708">push (optional)</text>
         <line class="edge job" x1="575" y1="652" x2="575" y2="728" marker-end="url(#arr)"/>
         <text class="lbl" x="585" y="708">one-way copy</text>
 
@@ -144,7 +144,7 @@
         <g class="node">
           <rect x="290" y="560" width="170" height="90" rx="4"/>
           <text class="t" x="375" y="592" text-anchor="middle">vault-git</text>
-          <text class="s" x="375" y="612" text-anchor="middle">commit history</text>
+          <text class="s" x="375" y="612" text-anchor="middle">local history</text>
           <text class="m" x="375" y="631" text-anchor="middle">systemd timer</text>
         </g>
 
@@ -163,9 +163,9 @@
         </g>
 
         <g class="node">
-          <rect x="290" y="730" width="170" height="80" rx="4"/>
+          <rect x="290" y="730" width="170" height="80" rx="4" stroke-dasharray="6 4"/>
           <text class="t" x="375" y="764" text-anchor="middle">GitHub</text>
-          <text class="s" x="375" y="784" text-anchor="middle">private repo per vault</text>
+          <text class="s" x="375" y="784" text-anchor="middle">optional · off by default</text>
         </g>
 
         <g class="node">

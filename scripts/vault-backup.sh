@@ -5,6 +5,11 @@
 # overwritten on the next run; edit notes in Obsidian or via Claude instead.
 . "$(dirname -- "${BASH_SOURCE[0]}")/_common.sh"
 
+if [[ -z "$(vault_list)" ]]; then
+    echo "No vaults configured; nothing to back up."
+    exit 0
+fi
+
 require RCLONE_REMOTE
 require RCLONE_BACKUP_PATH
 

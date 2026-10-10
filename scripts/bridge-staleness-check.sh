@@ -8,6 +8,11 @@
 # Exit: 0 all fresh, 1 something stale, 2 something missing.
 . "$(dirname -- "${BASH_SOURCE[0]}")/_common.sh"
 
+if [[ -z "$(vault_list)" ]]; then
+    echo "No vaults configured; nothing to check."
+    exit 0
+fi
+
 MAX_AGE_HOURS="${MAX_AGE_HOURS:-24}"
 status=0
 

@@ -1,7 +1,10 @@
 # Setup
 
-Order matters: TLS must work before mobile devices can sync, and CouchDB must
-be provisioned before the bridge starts.
+This sets up the backend with **no vaults**. When it is done, Claude can
+connect and the timers run, with nothing to sync yet. Then add vaults one at a
+time with [`vaults.md`](vaults.md), whether they are new or already exist.
+
+Order matters: TLS must work before mobile devices can sync.
 
 ## 1. DNS
 
@@ -21,6 +24,8 @@ proxied and the path rewritten — not worth the trouble.
 curl -fsSL https://get.docker.com | sh
 curl -fsSL https://deno.land/install.sh | sh
 apt-get install -y rclone git
+# Only if you will push history to GitHub (section 10): the GitHub CLI.
+# https://github.com/cli/cli/blob/trunk/docs/install_linux.md
 
 git clone <this repo> /opt/obsidian-self-host
 cd /opt/obsidian-self-host
@@ -46,9 +51,7 @@ Set `LIVESYNC_PASSPHRASE` to a strong passphrase of your own and **store it in
 a password manager now**. It is the E2EE key: every device needs it, the bridge
 needs it, and nothing can recover the vaults without it.
 
-`VAULTS` is a space-separated list. Each name becomes a CouchDB database, a
-directory under `/srv/vaults`, a git repo, and a bridge peer group — so use
-only `[A-Za-z0-9._-]`.
+Leave `VAULTS` empty. `add-vault.sh` and `remove-vault.sh` manage it.
 
 ## 4. Directories
 
@@ -73,40 +76,25 @@ docker compose logs -f caddy          # watch the certificate get issued
 curl -fsS https://couch.$DOMAIN/_up   # {"status":"ok", ...}
 ```
 
-Then provision it. This delegates to the upstream provisioner so the settings
-always match what the plugin expects, instead of a copy that drifts:
+CouchDB's LiveSync settings come from `couchdb/local.d/10-livesync.ini`,
+which is loaded at startup. Each vault's database is created later by
+`add-vault.sh`, which also runs the upstream provisioner for it.
+
+## 6. Bridge config
 
 ```bash
-./scripts/couchdb-provision.sh
-curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" https://couch.$DOMAIN/_all_dbs
+sudo ./scripts/gen-bridge-config.sh    # writes bridge/config.json with no vaults
 ```
 
-`couchdb/local.d/10-livesync.ini` records the same settings for reference and
-so a rebuilt server comes up correct before the provisioner runs.
-
-## 6. Onboard the first device
-
-Do this **before** starting the bridge, so the first full upload comes from a
-device holding a known-good vault rather than from an empty server directory.
-See [`onboarding.md`](onboarding.md), then [`migration.md`](migration.md) for
-moving a vault off Google Drive.
-
-## 7. The bridge
-
-```bash
-./scripts/gen-bridge-config.sh    # writes bridge/config.json, mode 600
-docker compose up -d bridge
-docker compose logs -f bridge
-ls -la /srv/vaults/<vault>/       # plain markdown should appear
-```
-
-The first run scans both sides fully. If the mirror looks incomplete, restart
-once with `--reset` (`docker compose run --rm bridge deno task run --reset`).
+Do not start the bridge yet; the first `add-vault.sh` does that. Generating the
+file now matters anyway: if `bridge/config.json` is missing when anything
+starts the bridge, Docker silently creates a *directory* in its place and the
+bridge fails with a confusing parse error.
 
 Never run `docker compose down --volumes`: it destroys the bridge's
 `localStorage` and forces a complete re-scan.
 
-## 8. Google OAuth for the MCP server
+## 7. Google OAuth and the MCP server
 
 In [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
 
@@ -140,6 +128,19 @@ curl -s https://mcp.$DOMAIN/.well-known/oauth-authorization-server | jq \
 Then in claude.ai: **Customize → Connectors → + → Add custom connector**, URL
 `https://mcp.<domain>/mcp`. Sign in with Google when prompted.
 
+## 8. Google Drive backup
+
+The default off-server copy. Configure the rclone remote named in
+`RCLONE_REMOTE`:
+
+```bash
+sudo rclone config     # choose "drive"; use the headless flow and paste the
+                       # token from a browser on your computer
+sudo rclone lsd gdrive:
+```
+
+Run it with `sudo`: the backup timer runs as root and uses root's rclone config.
+
 ## 9. Timers
 
 ```bash
@@ -150,18 +151,33 @@ sudo systemctl enable --now vault-git.timer vault-backup.timer vault-staleness.t
 systemctl list-timers 'vault-*'
 ```
 
-Before the git timer can push, create one **private** GitHub repo per vault
-named exactly after the vault, and give the VPS a deploy key with write
-access at `/root/.ssh/vault_deploy` (the path in `vault-git.service`).
+With no vaults yet, each run logs "No vaults configured" and succeeds. Vaults
+you add later are picked up automatically.
 
-For the backup, configure the rclone remote named in `RCLONE_REMOTE`:
+`vault-git.timer` keeps local history for every vault in `/srv/git/<vault>.git`.
+That needs no setup and gives a 15-minute undo for bad edits.
 
-```bash
-rclone config          # choose "drive"; use the headless flow and paste the
-                       # token from a browser on your computer
-rclone lsd gdrive:
-```
+## 10. Optional: push history to GitHub
 
-## 10. Verify end to end
+Off by default; the Drive backup is the off-server copy. To also push each
+vault's history to its own private GitHub repo:
 
-See the verification checklist in [`runbook.md`](runbook.md).
+1. Install the GitHub CLI (section 2) and log in **as root**, because the timer
+   runs as root:
+   ```bash
+   sudo gh auth login
+   ```
+   Your GitHub account, token and its permissions are yours to manage; the
+   scripts only use the login. The token needs to create repos and push to them.
+2. Set `GIT_PUSH=github` in `.env`. Set `GIT_REMOTE_OWNER` only to put the repos
+   under an organization; by default they go to the account `gh` is logged in as.
+3. For each vault you already have, run `sudo ./scripts/add-vault.sh <name>`
+   once more. It creates the private repo (or reuses an existing one) and pushes
+   the history. New vaults get their repo when you add them.
+
+If the login expires, pushes log a warning and local history carries on.
+
+## 11. Verify, then add your first vault
+
+See the verification checklist in [`runbook.md`](runbook.md), then add vaults
+with [`vaults.md`](vaults.md).

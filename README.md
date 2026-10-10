@@ -22,36 +22,51 @@ inputs and outputs are in [`docs/architecture.md`](docs/architecture.md).
 | `couchdb/local.d/` | LiveSync's required CouchDB settings |
 | `bridge/` | bridge image and peer config (generated) |
 | `mcp/` | the MCP server: `server.py` (auth, tools), `vaults.py` (path sandbox) |
-| `scripts/` | provisioning, git history, backup, health |
+| `scripts/` | `add-vault.sh` / `remove-vault.sh`, plus provisioning, git history, backup, health |
 | `systemd/` | timers for history, backup and the staleness check |
-| `docs/` | architecture, setup, device onboarding, migration, runbook |
+| `docs/` | architecture, setup, adding vaults, device onboarding, migration, runbook |
 
 Configuration and code only — **no vault content ever lives in this repo.**
 
 ## Setup
 
-Full detail in [`docs/setup.md`](docs/setup.md). The short version:
+Two stages: set up the backend once with no vaults, then add vaults one at a
+time. New and existing vaults use the same steps.
+
+**1. Backend**, in full in [`docs/setup.md`](docs/setup.md). The short version:
 
 ```bash
 git clone <this repo> /opt/obsidian-self-host && cd /opt/obsidian-self-host
-cp .env.example .env && chmod 600 .env && "$EDITOR" .env   # fill everything in
+cp .env.example .env && chmod 600 .env && "$EDITOR" .env   # fill in; leave VAULTS empty
 
 sudo install -d -o 5984 -g 5984 couchdb/local.d
 sudo install -d -m 755 -o 1993 -g 1993 /srv/vaults   # uid both containers run as
 sudo install -d -m 700 /srv/git
 
-docker compose up -d couchdb caddy
-./scripts/couchdb-provision.sh        # needs Deno 2
-./scripts/gen-bridge-config.sh
-docker compose up -d                  # bridge + mcp
+docker compose up -d couchdb caddy mcp
+sudo ./scripts/gen-bridge-config.sh   # empty config; the bridge starts with the first vault
+sudo rclone config                    # Google Drive remote for the nightly backup
 
 sudo cp systemd/* /etc/systemd/system/
 sudo systemctl enable --now vault-git.timer vault-backup.timer vault-staleness.timer
 ```
 
-Then onboard devices ([`docs/onboarding.md`](docs/onboarding.md)), move the
-vaults off Drive ([`docs/migration.md`](docs/migration.md)), and add the
-connector at `https://mcp.<domain>/mcp` in claude.ai.
+Add the connector at `https://mcp.<domain>/mcp` in claude.ai.
+
+**2. Vaults**, in full in [`docs/vaults.md`](docs/vaults.md):
+
+```bash
+sudo ./scripts/add-vault.sh <name>    # creates the database
+# connect the first device and let it upload (docs/onboarding.md)
+sudo ./scripts/add-vault.sh <name>    # connects the vault to the server
+```
+
+Notes coming from Google Drive: read [`docs/migration.md`](docs/migration.md)
+first. Remove a vault with `sudo ./scripts/remove-vault.sh <name>`.
+
+**Backups:** every vault gets local git history (15-minute undo) and a nightly
+Google Drive copy. Pushing history to private GitHub repos is optional; see
+`docs/setup.md` section 10.
 
 ## Why OAuth and not an API key
 

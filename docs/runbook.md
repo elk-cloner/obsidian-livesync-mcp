@@ -2,7 +2,8 @@
 
 ## Verification checklist
 
-Run after setup, and again after any upgrade.
+Run after setup, and again after any upgrade. Checks 2 to 9 need at least one
+vault ([`vaults.md`](vaults.md)); with none yet, skip them.
 
 | # | Check | Command / action | Expected |
 |---|---|---|---|
@@ -12,7 +13,7 @@ Run after setup, and again after any upgrade.
 | 4 | Device → mirror | new note on iPhone | appears in `/srv/vaults/<vault>` within seconds |
 | 5 | Mirror → device | `echo '# x' > /srv/vaults/<vault>/x.md` | appears in Obsidian |
 | 6 | Git history | `git --git-dir=/srv/git/<vault>.git log --oneline` | timed commits |
-| 7 | Git push | GitHub repo page | commits present |
+| 7 | Git push (only with `GIT_PUSH=github`) | GitHub repo page | commits present |
 | 8 | Restore | `git --git-dir=… --work-tree=… checkout <sha> -- path/note.md` | note comes back |
 | 9 | Backup | `rclone check /srv/vaults/<vault> $RCLONE_REMOTE:$RCLONE_BACKUP_PATH/<vault>` | no differences |
 | 10 | MCP 401 | `curl -i https://mcp.$DOMAIN/mcp` | `401` + `www-authenticate` with `resource_metadata` |
@@ -36,10 +37,15 @@ by hand. To reverse this, enable Hidden File Sync on every device *and* add
 `.obsidian/**` to `includeInternal` in the bridge config, excluding
 `workspace*.json`.
 
-**Notes reach GitHub unencrypted.** The git history gives a browsable,
-restorable archive; the trade-off is that GitHub (private repos) can read the
-notes. CouchDB and the Drive backup are not affected — CouchDB holds E2EE
-ciphertext, and the Drive copy is plain but in your own Drive.
+**Local history always, GitHub optional.** Every vault gets git history on the
+server for a 15-minute undo, with no setup. Pushing it to GitHub is off by
+default because the Drive backup already gives an off-server copy. Turn it on
+with `GIT_PUSH=github` (see [`setup.md`](setup.md) section 10).
+
+**With GitHub push on, notes reach GitHub unencrypted.** The pushed history is
+a browsable, restorable archive; the trade-off is that GitHub (private repos)
+can read the notes. CouchDB and the Drive backup are not affected: CouchDB holds
+E2EE ciphertext, and the Drive copy is plain but in your own Drive.
 
 **`trash_note` is server-side only.** `.trash` is hidden, so it never
 replicates to devices. A trashed note leaves every device but stays on the
@@ -54,7 +60,7 @@ server and in git history. Empty it by hand.
 | `JWT_SIGNING_KEY` | `.env` | connector needs re-auth | tokens forgeable |
 | `OAUTH_STORAGE_ENCRYPTION_KEY` | `.env` | client store unreadable → re-auth | stored tokens readable |
 | Google client secret | `.env` | regenerate in Console | OAuth flow impersonable |
-| GitHub deploy key | `/root/.ssh/vault_deploy` | make a new one | history repos writable |
+| GitHub CLI login (if `GIT_PUSH=github`) | root's `gh auth login` | log in again | whatever that token can reach |
 
 Keep `LIVESYNC_PASSPHRASE` in a password manager. `chmod 600 .env` and
 `bridge/config.json`; `gen-bridge-config.sh` sets the latter for you.
@@ -145,15 +151,14 @@ curl -X POST -u "$COUCHDB_USER:$COUCHDB_PASSWORD" \
 git --git-dir=/srv/git/<vault>.git gc --aggressive --prune=now
 ```
 
-### Adding a vault
+### Adding or removing a vault
 
 ```bash
-"$EDITOR" .env                       # add the name to VAULTS
-./scripts/couchdb-provision.sh       # idempotent
-./scripts/gen-bridge-config.sh
-docker compose up -d bridge
-# create the private GitHub repo, then onboard devices
+sudo ./scripts/add-vault.sh <vault>          # run, onboard first device, run again
+sudo ./scripts/remove-vault.sh <vault>       # archive; add --purge to delete the DB
 ```
+
+Details in [`vaults.md`](vaults.md).
 
 Never `docker compose down --volumes` — it wipes the bridge's scan state and
 the stored OAuth client.

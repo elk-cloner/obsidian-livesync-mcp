@@ -1,56 +1,31 @@
 #!/usr/bin/env bash
-# Commit every vault's current state and push off-server.
+# Commit every vault's current state to its local history repo, and push it to
+# GitHub when GIT_PUSH=github.
 #
-# The git directory lives OUTSIDE the synced tree, driven by --git-dir and
-# --work-tree, so the bridge never sees a .git folder and never tries to
-# replicate it to devices.
+# Local history (/srv/git/<vault>.git) is always on: it needs no account and
+# gives a 15-minute undo for bad edits. The push is the optional off-server
+# copy; GitHub login is the user's own `sudo gh auth login`. Repos are created
+# by add-vault.sh, never here.
 . "$(dirname -- "${BASH_SOURCE[0]}")/_common.sh"
 
-require GIT_REMOTE_OWNER
+vaults="$(vault_list)"
+if [[ -z "$vaults" ]]; then
+    echo "No vaults configured; nothing to commit."
+    exit 0
+fi
 
-export GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-vault-bot}"
-export GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-vault-bot@localhost}"
-export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
-export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-
-stamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-# Thin wrapper so every git call targets the out-of-tree history repo. Reads
-# $repo and $work from the loop below.
-g() { command git --git-dir="$repo" --work-tree="$work" "$@"; }
-
-for vault in $(vault_list); do
-    work="$VAULT_ROOT/$vault"
-    repo="$GIT_ROOT/$vault.git"
-
-    if [[ ! -d "$work" ]]; then
-        echo "skip $vault: $work does not exist" >&2
+for vault in $vaults; do
+    if [[ ! -d "$VAULT_ROOT/$vault" ]]; then
+        echo "skip $vault: $VAULT_ROOT/$vault does not exist" >&2
         continue
     fi
 
-    if [[ ! -d "$repo" ]]; then
-        echo "==> initialising history repo for $vault"
-        install -d -m 700 "$repo"
-        g init --quiet --initial-branch=main
-        g remote add origin "git@github.com:$GIT_REMOTE_OWNER/$vault.git"
-        # Device config is not synced, so it is never in the mirror; .trash is
-        # kept out of history because trash_note already preserves the content.
-        printf '%s\n' '.obsidian/' '.trash/' '.livesync-mcp-*' \
-            > "$repo/info/exclude"
-    fi
+    history_repo_init "$vault"
+    history_commit "$vault"
 
-    g add -A
-    if g diff --cached --quiet; then
-        continue
-    fi
-
-    changed="$(g diff --cached --numstat | wc -l | tr -d ' ')"
-    g commit --quiet -m "auto: $stamp ($changed file(s))"
-    echo "==> $vault: committed $changed file(s)"
-
-    # A missing or unreachable remote must not fail the whole run -- the local
-    # history is the primary artefact and the push is only the off-server copy.
-    if ! g push --quiet origin main; then
-        echo "WARN $vault: push to origin failed; local history is intact" >&2
+    # Push even when nothing new was committed, so a push that failed last
+    # time (or history from before GitHub was turned on) catches up.
+    if github_enabled; then
+        history_push "$vault"
     fi
 done
