@@ -7,7 +7,7 @@ vault ([`vaults.md`](vaults.md)); with none yet, skip them.
 
 | # | Check | Command / action | Expected |
 |---|---|---|---|
-| 1 | CouchDB up | `curl -fsS https://couch.$DOMAIN/_up` | `{"status":"ok"...}` |
+| 1 | CouchDB up | `curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" https://couch.$DOMAIN/_up` | `{"status":"ok"...}` |
 | 2 | Databases exist | `curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" https://couch.$DOMAIN/_all_dbs` | one per vault |
 | 3 | Device → device | new note on one device | appears on another |
 | 4 | Device → mirror | new note on iPhone | appears in `/srv/vaults/<vault>` within seconds |

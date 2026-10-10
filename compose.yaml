@@ -20,7 +20,9 @@ services:
     # so 5984 is never exposed on the host.
     networks: [internal]
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:5984/_up"]
+      # require_valid_user applies to /_up too, so the check must log in.
+      # $$ defers expansion to the container, which has these variables.
+      test: ["CMD-SHELL", "curl -fsS -u \"$$COUCHDB_USER:$$COUCHDB_PASSWORD\" http://127.0.0.1:5984/_up"]
       interval: 30s
       timeout: 5s
       retries: 5

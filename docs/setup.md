@@ -73,7 +73,9 @@ sudo install -d -m 700 /srv/git
 ```bash
 docker compose up -d couchdb caddy
 docker compose logs -f caddy          # watch the certificate get issued
-curl -fsS https://couch.$DOMAIN/_up   # {"status":"ok", ...}
+set -a; . ./.env; set +a              # load DOMAIN and the CouchDB login
+curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" https://couch.$DOMAIN/_up
+# {"status":"ok", ...}  (a 401 means it was asked without the login)
 ```
 
 CouchDB's LiveSync settings come from `couchdb/local.d/10-livesync.ini`,
