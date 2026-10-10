@@ -6,24 +6,11 @@ unlimited git history, a nightly one-way backup to Drive, and a custom MCP
 connector that lets Claude read *and write* the vaults from any surface
 (web, iPhone, iPad).
 
-```
-iPhone / iPad / Mac / PC          VPS (Docker)                        Off-server
-  Obsidian + Self-hosted  ──TLS──▶ Caddy ──▶ CouchDB (1 DB per vault, E2EE)
-  LiveSync plugin                            │
-                                             ▼  livesync-bridge (Deno)
-                                      /srv/vaults/<vault>/  ← plain markdown
-                                             │
-                        ┌────────────────────┼────────────────────┐
-                        ▼                    ▼                    ▼
-                  git, every 15min     rclone, nightly      FastMCP server
-                        │                    │                    │
-                        ▼                    ▼                    ▼
-                 GitHub private repos   Google Drive         claude.ai connector
-                                        (backup only)
-```
+[![Architecture blueprint](docs/architecture.svg)](docs/architecture.md)
 
 `/srv/vaults` is the hinge: everything downstream reads it, and writes into it
-flow back out to every device via the bridge and CouchDB.
+flow back out to every device via the bridge and CouchDB. Each component's job,
+inputs and outputs are in [`docs/architecture.md`](docs/architecture.md).
 
 ## Layout
 
@@ -37,7 +24,7 @@ flow back out to every device via the bridge and CouchDB.
 | `mcp/` | the MCP server: `server.py` (auth, tools), `vaults.py` (path sandbox) |
 | `scripts/` | provisioning, git history, backup, health |
 | `systemd/` | timers for history, backup and the staleness check |
-| `docs/` | setup, device onboarding, migration, runbook |
+| `docs/` | architecture, setup, device onboarding, migration, runbook |
 
 Configuration and code only — **no vault content ever lives in this repo.**
 
