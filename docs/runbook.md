@@ -111,7 +111,7 @@ request, and nothing reaches the OAuth endpoints at all.
 
 Usually the Google redirect URI. It must be exactly
 `https://mcp.<domain>/auth/callback`. Also confirm your address is still a
-test user on the consent screen, and that it matches `ALLOWED_EMAIL`.
+test user (Google Auth Platform → Audience), and that it matches `ALLOWED_EMAIL`.
 
 ### Conflicts
 

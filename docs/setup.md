@@ -96,14 +96,28 @@ Never run `docker compose down --volumes`: it destroys the bridge's
 
 ## 7. Google OAuth and the MCP server
 
-In [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
+In [Google Cloud Console](https://console.cloud.google.com/auth/overview),
+under **Google Auth Platform** (formerly "OAuth consent screen"):
 
-1. **OAuth consent screen** — External, and add your own address as the only
-   test user. Nobody else needs to reach this.
-2. **Credentials → Create OAuth client ID** → Web application.
+1. **Overview → Get started.** Any app name and your email as support email;
+   **Audience: External** ("Internal" exists only for Google Workspace
+   organizations); your email as contact; accept the policy; **Create**.
+2. **Audience → Test users → Add users:** your own address, the same one as
+   `ALLOWED_EMAIL`. Nobody else needs to reach this. Leave the publishing
+   status on **Testing**.
+3. **Clients → Create client** → Web application.
    - Authorized redirect URI: `https://mcp.<domain>/auth/callback`
      (exactly — this is FastMCP's default `redirect_path`)
-3. Put the client ID and secret in `.env`.
+4. Put the client ID and secret in `.env`. Copy the secret right away; the
+   Console may show it in full only once.
+
+Branding, Data Access and Verification Center can stay as they are: the server
+asks only for `openid` and `userinfo.email`, basic scopes that need no review.
+
+In Testing mode Google expires sign-ins after 7 days. If the connector asks you
+to reconnect about weekly, use **Audience → Publish app**. With only basic
+scopes there is no review, and `ALLOWED_EMAIL` still rejects every other
+account.
 
 Claude's own callback (`https://claude.ai/api/mcp/auth_callback`) is **not**
 registered with Google. FastMCP's OAuth proxy terminates that leg itself.
