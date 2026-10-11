@@ -1,0 +1,7 @@
+# The mcp image builds from the repo root so it can include the vault-lint
+# skill's lint.py. Send only what the Dockerfile copies.
+*
+!backend/mcp/pyproject.toml
+!backend/mcp/server.py
+!backend/mcp/vaults.py
+!skills/vault-lint/scripts/lint.py

@@ -1,0 +1,31 @@
+filters:
+  and:
+    - file.inFolder("topics/graph-theory")
+views:
+  - type: table
+    name: Open tasks
+    filters:
+      and:
+        - type == "task"
+        - status != "done"
+    order: [file.name, kind, status, due]
+  - type: table
+    name: Open questions
+    filters:
+      and:
+        - type == "question"
+        - status == "open"
+    order: [file.name, blocks]
+  - type: table
+    name: Findings
+    filters:
+      and:
+        - type == "finding"
+        - status != "retracted"
+    order: [file.name, confidence, projects, created]
+  - type: table
+    name: Concepts
+    filters:
+      and:
+        - type == "concept"
+    order: [file.name, status, needs_review, updated]

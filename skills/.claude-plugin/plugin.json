@@ -1,0 +1,11 @@
+{
+  "name": "vault",
+  "version": "1.0.0",
+  "description": "Skills for the knowledge vault schema in this repository (vault/template/CLAUDE.md). They work through the vault MCP server or on a local folder.",
+  "author": {
+    "name": "elk-cloner"
+  },
+  "skills": [
+    "."
+  ]
+}

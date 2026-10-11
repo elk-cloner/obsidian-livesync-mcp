@@ -1,0 +1,16 @@
+# Findings from the last 30 days. Filters on the created field, not file.ctime:
+# sync gives every device and the server its own file times.
+filters:
+  and:
+    - type == "finding"
+    - status != "retracted"
+    - date(created) > today() - "30d"
+views:
+  - type: table
+    name: Recent
+    order:
+      - file.name
+      - topics
+      - projects
+      - confidence
+      - status

@@ -1,0 +1,14 @@
+{
+  "name": "obsidian-livesync-mcp",
+  "description": "Self-hosted Obsidian sync with Claude access: the vault skills for this repository's knowledge vault schema.",
+  "owner": {
+    "name": "elk-cloner"
+  },
+  "plugins": [
+    {
+      "name": "vault",
+      "source": "./skills",
+      "description": "Skills for the knowledge vault schema: capture findings, decisions, records and questions, maintain concepts and learning paths, manage tasks, brief, and lint."
+    }
+  ]
+}

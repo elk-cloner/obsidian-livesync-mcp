@@ -1,0 +1,33 @@
+# Structural lint, the parts Bases can express. The script covers the rest.
+filters:
+  and:
+    - type == "finding" || type == "decision" || type == "concept" || type == "task"
+views:
+  - type: table
+    name: Findings without source
+    filters:
+      and:
+        - type == "finding"
+        - source.isEmpty()
+    order:
+      - file.name
+      - area
+  - type: table
+    name: Notes without topics or projects
+    filters:
+      and:
+        - topics.isEmpty()
+        - projects.isEmpty()
+    order:
+      - file.name
+      - type
+      - area
+  - type: table
+    name: Superseded decisions
+    filters:
+      and:
+        - type == "decision"
+        - status == "superseded"
+    order:
+      - file.name
+      - superseded_by

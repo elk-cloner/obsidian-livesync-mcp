@@ -1,0 +1,106 @@
+name: obsidian-self-host
+
+# VAULT_ROOT on the host (/srv/vaults by default, set in .env) is the
+# plain-file mirror of every vault. It is the integration point for git
+# history, the rclone backup and the MCP server.
+#
+# Containers run on UTC whatever the host's zone, so every timestamp the stack
+# writes agrees with the vault schema, which is UTC throughout.
+
+services:
+  couchdb:
+    image: couchdb:3.5.2
+    restart: unless-stopped
+    environment:
+      COUCHDB_USER: ${COUCHDB_USER:?set COUCHDB_USER in .env}
+      COUCHDB_PASSWORD: ${COUCHDB_PASSWORD:?set COUCHDB_PASSWORD in .env}
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+      # Bind-mounted so 10-livesync.ini stays in this repo. The entrypoint also
+      # writes docker.ini here with the admin credentials -- that one is
+      # gitignored. The directory must be owned by uid/gid 5984.
+      - ./couchdb/local.d:/opt/couchdb/etc/local.d
+    # Deliberately no published ports: Caddy reaches CouchDB over this network,
+    # so 5984 is never exposed on the host.
+    networks: [internal]
+    healthcheck:
+      # require_valid_user applies to /_up too, so the check must log in.
+      # $$ defers expansion to the container, which has these variables.
+      test: ["CMD-SHELL", "curl -fsS -u \"$$COUCHDB_USER:$$COUCHDB_PASSWORD\" http://127.0.0.1:5984/_up"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  bridge:
+    # The upstream project publishes no image, so build it from a checkout.
+    build:
+      context: ./bridge
+    restart: unless-stopped
+    depends_on:
+      couchdb:
+        condition: service_healthy
+    volumes:
+      # Run scripts/gen-bridge-config.sh BEFORE first start: Docker
+      # silently creates a directory here if the file does not exist,
+      # and the bridge then fails with an unhelpful parse error.
+      - ./bridge/config.json:/app/dat/config.json:ro
+      # Storage baseDirs in config.json must start with data/, which is this
+      # mount. data/vaults/<vault> therefore lands in $VAULT_ROOT/<vault>.
+      - ${VAULT_ROOT:-/srv/vaults}:/app/data/vaults
+      # Deno's localStorage, used to remember what offline scanning has seen.
+      # `docker compose down --volumes` wipes it and forces a full re-scan.
+      - bridge-local-storage:/deno-dir/location_data
+    environment:
+      TZ: UTC
+    networks: [internal]
+
+  mcp:
+    build:
+      # The repo root, so the image can include the vault-lint skill's lint.py:
+      # one implementation serves both the skill and the lint_vault tool.
+      context: ..
+      dockerfile: backend/mcp/Dockerfile
+    restart: unless-stopped
+    environment:
+      FASTMCP_SERVER_BASE_URL: https://mcp.${DOMAIN:?set DOMAIN in .env}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?set GOOGLE_CLIENT_ID in .env}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?set GOOGLE_CLIENT_SECRET in .env}
+      ALLOWED_EMAIL: ${ALLOWED_EMAIL:?set ALLOWED_EMAIL in .env}
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?set JWT_SIGNING_KEY in .env}
+      OAUTH_STORAGE_ENCRYPTION_KEY: ${OAUTH_STORAGE_ENCRYPTION_KEY:?set OAUTH_STORAGE_ENCRYPTION_KEY in .env}
+      VAULT_ROOT: /srv/vaults
+      OAUTH_CLIENT_STORE_DIR: /data/oauth-clients
+      TZ: UTC
+    volumes:
+      # Host side from .env; /srv/vaults inside the container is fixed.
+      - ${VAULT_ROOT:-/srv/vaults}:/srv/vaults
+      # Claude's dynamically registered OAuth client lives here. Lose it and
+      # the connector has to be re-authorized.
+      - mcp-oauth-clients:/data/oauth-clients
+    networks: [internal]
+
+  caddy:
+    image: caddy:2.11.7
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [internal]
+
+networks:
+  internal:
+
+volumes:
+  couchdb-data:
+  bridge-local-storage:
+  mcp-oauth-clients:
+  caddy-data:
+  caddy-config:
