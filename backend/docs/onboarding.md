@@ -1,31 +1,39 @@
 # Device onboarding
 
-Devices are onboarded with a **Setup URI**: a single encrypted string holding
-the server URL, credentials and passphrase. It beats typing an E2EE passphrase
-into an iPhone, and it guarantees every device uses identical settings, which
-is what prevents the "tweak mismatch" warnings.
+You connect each device with a **Setup URI**. A Setup URI is one encrypted
+string. It holds the server URL, the login and the passphrase. It is easier
+than typing an E2EE passphrase on an iPhone. It also gives all devices the
+same settings. Equal settings prevent the "tweak mismatch" warnings.
 
 ## Where Setup URIs come from
 
-- **First device of a vault:** `add-vault.sh` prints one,
-  with its one-time passphrase ([`vaults.md`](vaults.md)).
-- **Every other device:** copy one from a device that already syncs the vault
-  (see below). No server step.
+| Device | Source of the Setup URI |
+|---|---|
+| **First device of a vault** | `add-vault.sh` prints one, with its one-time passphrase ([`vaults.md`](vaults.md)). |
+| **All other devices** | Copy one from a device that syncs the vault (see below). There is no step on the server. |
 
-A Setup URI and its passphrase are only for setting up a device, right away.
-The generator says "store it safely", but there is nothing to keep: the URI
-expires (at the next Thursday 00:00 UTC, so possibly within hours; the exact
-time is printed), and a fresh one is always one command or one click away.
+A Setup URI and its passphrase are only to set up one device, immediately.
+The generator says "store it safely", but you do not need to keep it:
 
-**Always set devices up from a Setup URI, never by hand.** Newer LiveSync
-versions default a new vault to a random "ID key", which changes how document
-IDs are computed. livesync-bridge cannot be given that key, so it would stop
-matching the devices' documents. The URIs from `add-vault.sh` use legacy IDs
-derived from `LIVESYNC_PASSPHRASE`; that is also why there is no ID recovery
-code to save. If LiveSync ever asks about the ID key, choose **Keep current
-configuration**.
+- The URI expires at the next Thursday 00:00 UTC. That can be in a few hours.
+  The generator prints the exact time.
+- You can get a new one with one command or one click at any time.
 
-To generate a first-device URI again without `add-vault.sh` (on the server):
+**Always set up a device from a Setup URI. Do not set it up by hand.** The
+reasons:
+
+- Newer LiveSync versions give a new vault a random "ID key". This key
+  changes how LiveSync calculates document IDs.
+- livesync-bridge cannot get that key. Thus the bridge and the devices
+  calculate different IDs for the same document.
+- The URIs from `add-vault.sh` use legacy IDs. LiveSync calculates them from
+  `LIVESYNC_PASSPHRASE`, which the bridge has.
+- For the same reason, there is no ID recovery code to keep.
+
+If LiveSync asks about the ID key, select **Keep current configuration**.
+
+To make a first-device URI again without `add-vault.sh`, run this on the
+server:
 
 ```bash
 cd /opt/obsidian-self-host/backend
@@ -43,56 +51,78 @@ id_mode=legacy \
 
 ## First device
 
-This device holds the vault's starting content (an empty vault, for a new one),
-because its first sync is a full upload.
+This device holds the start content of the vault. For a new vault, that is an
+empty vault. Its first sync is a full upload.
 
-1. Obsidian → Settings → Community plugins → browse → **Self-hosted LiveSync**
-   → install and enable.
-2. In the plugin's setup wizard, choose to import a Setup URI and paste the one
-   from `add-vault.sh`.
-3. Enter the passphrase printed with it.
-4. Accept the suggested settings. When asked about the "Hidden File Sync"
-   feature, **decline** — device config is deliberately not synced here
-   (see the decision note in [`runbook.md`](runbook.md)).
-5. Let the initial upload finish completely. The status bar stops showing
-   pending counts; the log shows no further activity.
+1. **Do this:** in Obsidian, go to Settings → Community plugins → Browse.
+   Install and enable **Self-hosted LiveSync**.
+2. **Do this:** open the command palette with Cmd+P (macOS) or Ctrl+P
+   (Windows, Linux).
+3. **Do this:** run "Self-hosted LiveSync: Use the copied setup URI".
+   - Older versions call it "Open setup URI".
+   - You can also use the setup wizard tab in the plugin settings.
+4. **Do this:** paste the whole `obsidian://setuplivesync?settings=…` URI from
+   `add-vault.sh`.
+   **If it fails:** copy the URI again. It must be complete, on one line.
+5. **Do this:** type the passphrase that `add-vault.sh` printed with the URI.
+6. **Do this:** when LiveSync asks how to use the device, select the first
+   device option ("set up as new").
+7. **Do this:** when LiveSync asks about Hidden File Sync, select **No**.
+   This setup does not sync device configuration on purpose. Read the
+   decision in [`runbook.md`](runbook.md).
+8. **Do this:** if LiveSync shows "ID key" or "configuration mismatch", select
+   **Keep current configuration**.
+9. **Do this:** accept the other suggested settings.
+10. **Do this:** let the first upload finish completely.
+    **Result:** the status bar shows no pending counts, and the log shows no
+    more activity.
 
-Confirm on the server:
+Check the result on the server:
 
 ```bash
 curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" \
   "https://couch.$DOMAIN/<vault>" | jq '.doc_count'
 ```
 
-## Every further device
+`add-vault.sh` also watches the database. It connects the vault when the
+upload is quiet for 30 seconds.
 
-Generate a **fresh** Setup URI from the already-working device, not from the
-provisioning-time one:
+## All other devices
 
-Obsidian → Self-hosted LiveSync settings → **Setup URI** → copy / show QR.
+Make a **new** Setup URI on a device that works. Do not use the URI from the
+provision:
 
-Then on the new device: install the plugin, import the URI, enter its
-passphrase, and let it sync down.
+1. On the device that works, go to Self-hosted LiveSync settings →
+   **Setup URI**.
+2. Copy the URI, or show the QR code.
+3. On the new device, install the plugin.
+4. Import the URI with the same command as for the first device.
+5. Type the passphrase of the new URI.
+6. Let the device download the vault.
 
 ### iPhone and iPad
 
-- A publicly valid TLS certificate is required. Caddy provides this; a
-  self-signed certificate will not work.
-- The QR code from the desktop plugin is the easiest transfer route.
-- Obsidian on iOS suspends in the background. Open the app and leave it in the
-  foreground for a moment after heavy edits elsewhere, or it will look like
-  sync is lagging when it is simply asleep.
-- On a large first sync, keep the device awake and on Wi-Fi.
+- The server must have a TLS certificate that is valid in public. Caddy gives
+  one. A self-signed certificate does not work.
+- The QR code from the desktop plugin is the easiest way to move the URI.
+- Obsidian on iOS stops when it is in the background. After many edits on
+  other devices, open the app and keep it in the foreground for some seconds.
+  If not, sync looks slow, but the app only sleeps.
+- For a large first sync, keep the device awake and on Wi-Fi.
 
 ### Other desktops
 
-Same as the first device, except it should **not** do the initial upload — let it pull
-an existing vault down. If both machines upload independently you get two
-divergent document trees in one database.
+Do the same steps as for the first device, but do **not** do the first
+upload. Let the desktop pull the existing vault down. If two computers upload
+at the same time, one database gets two different document trees.
 
 ## Where this fits
 
-Onboarding happens inside adding a vault ([`vaults.md`](vaults.md)): run
-`add-vault.sh`, onboard the first device while it waits, and it connects the
-vault to the server once the upload has settled. Then onboard the remaining
-devices. Finish one vault before starting the next.
+You connect the devices as part of the procedure to add a vault ([`vaults.md`](vaults.md)):
+
+1. Run `add-vault.sh`.
+2. While it waits, connect the first device.
+3. When the upload is quiet, the script connects the vault to the server.
+4. Connect the other devices.
+
+Finish one vault before you start the next.

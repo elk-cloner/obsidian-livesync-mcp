@@ -1,85 +1,83 @@
-# Backend: self-hosted Obsidian sync + Claude MCP access
+# Backend: self-hosted Obsidian sync and Claude MCP access
 
-Part of a three-part repo; see the [root README](../README.md) for how the
-backend, the vault schema and the skills fit together.
+The backend replaces Google Drive sync for more than one Obsidian vault. You
+own all of it:
 
-Replaces Google Drive sync for multiple Obsidian vaults with a stack you own:
-device sync through your own CouchDB, a plain-file mirror on the server,
-unlimited git history, a nightly one-way backup to Drive, and a custom MCP
-connector that lets Claude read *and write* the vaults from any surface
-(web, iPhone, iPad).
+- Device sync through your own CouchDB.
+- A plain-file mirror of each vault on the server.
+- Git history with no limit.
+- A nightly one-way backup to Google Drive.
+- A custom MCP connector. Claude can read *and write* the vaults from all
+  surfaces (web, iPhone, iPad).
 
-[![Architecture blueprint](docs/architecture.svg)](docs/architecture.md)
+The backend is one of three parts of this repository. The
+[root README](../README.md) tells how the backend, the vault schema and the
+skills fit together.
 
-`VAULT_ROOT` (`/srv/vaults` by default) is the hinge: everything downstream reads it, and writes into it
-flow back out to every device via the bridge and CouchDB. Each component's job,
-inputs and outputs are in [`docs/architecture.md`](docs/architecture.md).
+## Start here
+
+To set up a new server, use the quick start: [`../docs/quickstart.md`](../docs/quickstart.md).
+It runs `sudo ./scripts/bootstrap.sh`, then adds the first vault.
+
+| To do this | Read |
+|---|---|
+| Set up the backend in one run | [`../docs/quickstart.md`](../docs/quickstart.md) |
+| Do one setup step by hand, or repair one step | [`docs/setup.md`](docs/setup.md) |
+| Add or remove a vault | [`docs/vaults.md`](docs/vaults.md) |
+| Connect a device | [`docs/onboarding.md`](docs/onboarding.md) |
+| Move notes out of Google Drive | [`docs/migration.md`](docs/migration.md) (read it first) |
+| Check the health, find a fault | [`docs/runbook.md`](docs/runbook.md) |
+| Learn what each part does | [`docs/architecture.md`](docs/architecture.md) |
+
+<a href="docs/architecture.md"><img src="../docs/blueprints/01-system.svg" alt="System overview: devices sync through Caddy to CouchDB, the bridge copies notes to the mirror in /srv/vaults, the MCP server gives Claude access to the mirror, and timers make the history, the backup and the staleness check" width="100%"></a>
+
+`VAULT_ROOT` (`/srv/vaults` by default) is the center of the backend. All
+the other parts read it. The bridge and CouchDB send each write in it to all
+devices. [`docs/architecture.md`](docs/architecture.md) gives the job, the
+inputs and the outputs of each part.
+
+## The two stages
+
+1. **Backend.** Set up the backend one time, with no vaults.
+   `sudo ./scripts/bootstrap.sh` does this. `sudo ./scripts/doctor.sh` checks
+   the result at any time.
+2. **Vaults.** Add the vaults one at a time with
+   `sudo ./scripts/add-vault.sh <name>`. New vaults and existing vaults use
+   the same steps.
+
+To remove a vault, run `sudo ./scripts/remove-vault.sh <name>`.
+
+**Backups:** each vault gets local git history (a 15-minute undo) and a
+nightly copy on Google Drive. A push of the history to private GitHub
+repositories is optional. Read [`docs/setup.md`](docs/setup.md), section 10.
 
 ## Layout
 
 | Path | What it is |
 |---|---|
-| `compose.yaml` | CouchDB, livesync-bridge, MCP server, Caddy |
-| `.env.example` | every secret and setting, including the host paths, documented |
-| `caddy/Caddyfile` | TLS and reverse proxy for both subdomains |
-| `couchdb/local.d/` | LiveSync's required CouchDB settings |
-| `bridge/` | bridge image and peer config (generated) |
-| `mcp/` | the MCP server: `server.py` (auth, tools), `vaults.py` (path sandbox); its image also includes the vault-lint skill's `lint.py` |
-| `scripts/` | `add-vault.sh` / `remove-vault.sh` / `seed-vault.sh`, `install-timers.sh`, plus provisioning, git history, backup, health |
-| `systemd/` | unit templates for history, backup and the staleness check |
-| `docs/` | architecture, setup, adding vaults, device onboarding, migration, runbook |
+| `compose.yaml` | CouchDB, livesync-bridge, the MCP server, Caddy |
+| `.env.example` | All secrets and settings, with the host paths. Each one has a comment. |
+| `caddy/Caddyfile` | TLS and the reverse proxy for the two subdomains |
+| `couchdb/local.d/` | The CouchDB settings that LiveSync needs |
+| `bridge/` | The image of the bridge and its peer configuration (generated) |
+| `mcp/` | The MCP server: `server.py` (auth, tools) and `vaults.py` (path sandbox). Its image also holds `lint.py` of the vault-lint skill. |
+| `scripts/` | `bootstrap.sh`, `doctor.sh`, `add-vault.sh` / `remove-vault.sh` / `seed-vault.sh`, `install-timers.sh`, and the scripts for provision, git history, backup and health |
+| `systemd/` | Unit templates for the history, the backup and the staleness check |
+| `docs/` | Architecture, setup, vaults, device onboarding, migration, runbook |
 
-Configuration and code only — **no vault content ever lives in this repo.**
-
-## Setup
-
-Two stages: set up the backend once with no vaults, then add vaults one at a
-time. New and existing vaults use the same steps.
-
-**1. Backend**, in full in [`docs/setup.md`](docs/setup.md). The short version:
-
-```bash
-git clone <this repo> /opt/obsidian-self-host && cd /opt/obsidian-self-host/backend
-cp .env.example .env && chmod 600 .env && "$EDITOR" .env   # fill in; leave VAULTS empty
-set -a; . ./.env; set +a
-
-sudo install -d -o 5984 -g 5984 couchdb/local.d
-sudo install -d -m 755 -o 1993 -g 1993 "$VAULT_ROOT"   # uid both containers run as
-sudo install -d -m 700 "$GIT_ROOT"
-
-docker compose up -d couchdb caddy mcp
-sudo ./scripts/gen-bridge-config.sh   # empty config; the bridge starts with the first vault
-sudo rclone config                    # Google Drive remote for the nightly backup
-
-sudo ./scripts/install-timers.sh      # renders the units for this checkout, enables the timers
-```
-
-Add the connector at `https://mcp.<domain>/mcp` in claude.ai.
-
-**2. Vaults**, in full in [`docs/vaults.md`](docs/vaults.md):
-
-```bash
-sudo ./scripts/add-vault.sh <name>    # creates the database, prints a Setup URI,
-                                      # waits while the first device uploads
-                                      # (docs/onboarding.md), then connects it
-sudo ./scripts/seed-vault.sh <name>   # new vault: puts the schema in (../vault/)
-```
-
-Notes coming from Google Drive: read [`docs/migration.md`](docs/migration.md)
-first. Remove a vault with `sudo ./scripts/remove-vault.sh <name>`.
-
-**Backups:** every vault gets local git history (15-minute undo) and a nightly
-Google Drive copy. Pushing history to private GitHub repos is optional; see
-`docs/setup.md` section 10.
+This repository holds configuration and code only. **Do not put vault
+content in this repository.**
 
 ## Why OAuth and not an API key
 
-claude.ai custom connectors accept only OAuth or no authentication. Static
-bearer-token headers exist but are beta-gated to specific organizations, and
-an authless server would leave a writable vault open to anyone with the URL.
-So `mcp/server.py` uses FastMCP's `GoogleProvider`, which presents a
-DCR/CIMD-compliant OAuth interface to Claude while authenticating you against
-one pre-registered Google client — then narrows access to a single email.
+Custom connectors in claude.ai accept only OAuth or no authentication. Static
+bearer-token headers exist, but only some organizations can use them (beta).
+A server with no authentication gives a writable vault to all persons who know
+the URL.
+
+Thus `mcp/server.py` uses the `GoogleProvider` of FastMCP. It gives
+Claude an OAuth interface that agrees with DCR and CIMD. It signs you in with
+one Google client that you register first. Then it lets only one email in.
 
 ## Tests
 
@@ -89,5 +87,5 @@ python mcp/test_lint.py              # lint on the template and the examples (ne
 ./scripts/bridge-staleness-check.sh  # is the mirror still moving?
 ```
 
-The sandbox tests are the ones that matter: every case is an attempt to read
-or write outside a vault.
+The sandbox tests are the most important tests. Each case tries to read or
+write outside a vault.
