@@ -282,8 +282,10 @@ history_push() {
 # Bridge and CouchDB, for add-vault.sh / remove-vault.sh.
 # ---------------------------------------------------------------------------
 
+# No provenance attestation: it carries a build timestamp, so every --build
+# made a new image ID even from cache, and compose recreated a running container.
 compose() {
-    docker compose --project-directory "$BACKEND_DIR" -f "$BACKEND_DIR/compose.yaml" "$@"
+    BUILDX_NO_DEFAULT_ATTESTATIONS=1 docker compose --project-directory "$BACKEND_DIR" -f "$BACKEND_DIR/compose.yaml" "$@"
 }
 
 # Apply a regenerated bridge/config.json. The bridge reads it only at start,
