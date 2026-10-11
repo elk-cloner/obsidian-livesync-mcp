@@ -1,0 +1,194 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" width="1600" height="1100" role="img" aria-labelledby="t d">
+  <title id="t">Sheet 2 of 3: setup order, in eight numbered steps</title>
+  <desc id="d">Eight steps in four lanes: server, vault, devices and Claude. 1 DNS: two A records, you. 2 Google OAuth client, you. 3 bootstrap.sh on the server: secrets, folders, CouchDB and TLS, MCP server, timers, script. 4 Drive backup: rclone config, you, optional. 5 First vault: add-vault.sh &lt;name&gt;, script, and you connect the first device; the schema is seeded. 6 Obsidian device settings: template folder _templates, attachment folder _attachments, you. 7 Claude: the connector in claude.ai and the skills, you. 8 Check: doctor.sh, script, then ask Claude to set up a topic, you.</desc>
+  <defs>
+    <style>
+    text { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #ffffff; }
+    .bg { fill: #0b3d6e; }
+    .frame { fill: none; stroke: #ffffff; stroke-width: 3; }
+    .margin { fill: none; stroke: #ffffff; stroke-width: 1.2; }
+    .tick { stroke: #ffffff; stroke-width: 1.2; }
+    .lab { font-size: 16px; font-weight: 700; letter-spacing: .05em; }
+    .big { font-size: 18px; font-weight: 700; letter-spacing: .05em; }
+    .ann { font-size: 14px; fill: #c4e2fb; }
+    .code { font-size: 14px; fill: #7fdbff; }
+    .zone { font-size: 15px; font-weight: 700; letter-spacing: .16em; fill: #7fdbff; }
+    .num { font-size: 16px; font-weight: 700; fill: #0b3d6e; }
+    .tbk { font-size: 14px; fill: #c4e2fb; letter-spacing: .08em; }
+    .halo { paint-order: stroke; stroke: #0b3d6e; stroke-width: 5px; stroke-linejoin: round; }
+    .solid { fill: #0b3d6e; stroke: #ffffff; stroke-width: 2; }
+    .hatch { fill: url(#hatch); stroke: #ffffff; stroke-width: 2; }
+    .opt { stroke-dasharray: 8 5; }
+    .hinge { fill: #0b3d6e; stroke: #7fdbff; stroke-width: 3; }
+    .zbox { fill: none; stroke: #7fdbff; stroke-width: 1.4; stroke-dasharray: 10 6; }
+    .zin { fill: none; stroke: #c4e2fb; stroke-width: 1.2; stroke-dasharray: 3 5; }
+    .w { fill: none; stroke: #ffffff; stroke-width: 2; }
+    .c { fill: none; stroke: #7fdbff; stroke-width: 2; }
+    .d { stroke-dasharray: 7 5; }
+    .life { fill: none; stroke: #c4e2fb; stroke-width: 1.5; stroke-dasharray: 2 6; }
+    .dot { fill: #7fdbff; }
+    .callout { fill: #0b3d6e; stroke: #7fdbff; stroke-width: 2; }
+    </style>
+    <pattern id="fine" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0H0V20" fill="none" stroke="#ffffff" stroke-opacity=".07" stroke-width="1"/>
+    </pattern>
+    <pattern id="coarse" width="100" height="100" patternUnits="userSpaceOnUse">
+      <rect width="100" height="100" fill="url(#fine)"/>
+      <path d="M100 0H0V100" fill="none" stroke="#ffffff" stroke-opacity=".16" stroke-width="1"/>
+    </pattern>
+    <pattern id="hatch" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="12" height="12" fill="#0b3d6e"/>
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#ffffff" stroke-opacity=".32" stroke-width="2"/>
+    </pattern>
+    <marker id="aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#ffffff"/>
+    </marker>
+    <marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#7fdbff"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1600" height="1100"/>
+  <rect x="32" y="32" width="1536" height="1036" fill="url(#coarse)"/>
+  <rect class="frame" x="16" y="16" width="1568" height="1068"/>
+  <rect class="margin" x="32" y="32" width="1536" height="1036"/>
+  <path class="tick" d="M200 16V32M200 1068V1084"/>
+  <path class="tick" d="M400 16V32M400 1068V1084"/>
+  <path class="tick" d="M600 16V32M600 1068V1084"/>
+  <path class="tick" d="M800 16V32M800 1068V1084"/>
+  <path class="tick" d="M1000 16V32M1000 1068V1084"/>
+  <path class="tick" d="M1200 16V32M1200 1068V1084"/>
+  <path class="tick" d="M1400 16V32M1400 1068V1084"/>
+  <path class="tick" d="M16 200H32M1568 200H1584"/>
+  <path class="tick" d="M16 400H32M1568 400H1584"/>
+  <path class="tick" d="M16 600H32M1568 600H1584"/>
+  <path class="tick" d="M16 800H32M1568 800H1584"/>
+  <g id="drawing">
+    <rect x="40" y="60" width="1520" height="200" fill="none" stroke="#7fdbff" stroke-width="1.2" stroke-dasharray="10 6"/>
+    <rect x="40" y="60" width="40" height="200" fill="#0b3d6e" stroke="#7fdbff" stroke-width="1.2"/>
+    <text class="zone" transform="translate(66 160.0) rotate(-90)" text-anchor="middle">SERVER</text>
+    <rect x="40" y="260" width="1520" height="200" fill="none" stroke="#7fdbff" stroke-width="1.2" stroke-dasharray="10 6"/>
+    <rect x="40" y="260" width="40" height="200" fill="#0b3d6e" stroke="#7fdbff" stroke-width="1.2"/>
+    <text class="zone" transform="translate(66 360.0) rotate(-90)" text-anchor="middle">VAULT</text>
+    <rect x="40" y="460" width="1520" height="200" fill="none" stroke="#7fdbff" stroke-width="1.2" stroke-dasharray="10 6"/>
+    <rect x="40" y="460" width="40" height="200" fill="#0b3d6e" stroke="#7fdbff" stroke-width="1.2"/>
+    <text class="zone" transform="translate(66 560.0) rotate(-90)" text-anchor="middle">DEVICES</text>
+    <rect x="40" y="660" width="1520" height="200" fill="none" stroke="#7fdbff" stroke-width="1.2" stroke-dasharray="10 6"/>
+    <rect x="40" y="660" width="40" height="200" fill="#0b3d6e" stroke="#7fdbff" stroke-width="1.2"/>
+    <text class="zone" transform="translate(66 760.0) rotate(-90)" text-anchor="middle">CLAUDE</text>
+    <rect x="100" y="85.0" width="160" height="150" fill="#0b3d6e"/>
+    <rect class="hatch" x="100" y="85.0" width="160" height="150"/>
+    <text class="lab halo" x="180.0" y="139.0" text-anchor="middle">DNS</text>
+    <text class="ann halo" x="180.0" y="163.0" text-anchor="middle">two A records</text>
+    <text class="code halo" x="180.0" y="183.0" text-anchor="middle">couch.&lt;domain&gt;</text>
+    <text class="code halo" x="180.0" y="203.0" text-anchor="middle">mcp.&lt;domain&gt;</text>
+    <circle cx="180.0" cy="109.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="180.0" y="115.0" text-anchor="middle">1</text>
+    <rect x="282" y="85.0" width="160" height="150" fill="#0b3d6e"/>
+    <rect class="hatch" x="282" y="85.0" width="160" height="150"/>
+    <text class="lab halo" x="362.0" y="139.0" text-anchor="middle">GOOGLE OAUTH</text>
+    <text class="ann halo" x="362.0" y="163.0" text-anchor="middle">web client</text>
+    <text class="ann halo" x="362.0" y="183.0" text-anchor="middle">id + secret</text>
+    <text class="ann halo" x="362.0" y="203.0" text-anchor="middle">into .env</text>
+    <circle cx="362.0" cy="109.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="362.0" y="115.0" text-anchor="middle">2</text>
+    <rect class="solid" x="464" y="70.0" width="160" height="180"/>
+    <text class="lab" x="544.0" y="124.0" text-anchor="middle">BOOTSTRAP</text>
+    <text class="code" x="544.0" y="148.0" text-anchor="middle">bootstrap.sh</text>
+    <text class="ann" x="544.0" y="168.0" text-anchor="middle">secrets, folders</text>
+    <text class="ann" x="544.0" y="188.0" text-anchor="middle">couchdb + tls</text>
+    <text class="ann" x="544.0" y="208.0" text-anchor="middle">mcp server</text>
+    <text class="ann" x="544.0" y="228.0" text-anchor="middle">timers</text>
+    <circle cx="544.0" cy="94.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="544.0" y="100.0" text-anchor="middle">3</text>
+    <rect x="646" y="85.0" width="160" height="150" fill="#0b3d6e"/>
+    <rect class="hatch opt" x="646" y="85.0" width="160" height="150"/>
+    <text class="lab halo" x="726.0" y="139.0" text-anchor="middle">DRIVE</text>
+    <text class="code halo" x="726.0" y="163.0" text-anchor="middle">rclone config</text>
+    <text class="ann halo" x="726.0" y="183.0" text-anchor="middle">backup remote</text>
+    <text class="ann halo" x="726.0" y="203.0" text-anchor="middle">optional</text>
+    <circle cx="726.0" cy="109.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="726.0" y="115.0" text-anchor="middle">4</text>
+    <rect class="solid" x="828" y="285.0" width="160" height="150"/>
+    <text class="lab" x="908.0" y="339.0" text-anchor="middle">FIRST VAULT</text>
+    <text class="code" x="908.0" y="363.0" text-anchor="middle">add-vault.sh</text>
+    <text class="code" x="908.0" y="383.0" text-anchor="middle">&lt;name&gt;</text>
+    <text class="ann" x="908.0" y="403.0" text-anchor="middle">schema seeded</text>
+    <circle cx="908.0" cy="309.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="908.0" y="315.0" text-anchor="middle">5</text>
+    <rect x="828" y="485.0" width="160" height="150" fill="#0b3d6e"/>
+    <rect class="hatch" x="828" y="485.0" width="160" height="150"/>
+    <text class="lab halo" x="908.0" y="539.0" text-anchor="middle">FIRST DEVICE</text>
+    <text class="ann halo" x="908.0" y="563.0" text-anchor="middle">import the</text>
+    <text class="ann halo" x="908.0" y="583.0" text-anchor="middle">setup uri</text>
+    <text class="ann halo" x="908.0" y="603.0" text-anchor="middle">upload notes</text>
+    <circle cx="908.0" cy="509.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="908.0" y="515.0" text-anchor="middle">5</text>
+    <rect x="1010" y="485.0" width="160" height="150" fill="#0b3d6e"/>
+    <rect class="hatch" x="1010" y="485.0" width="160" height="150"/>
+    <text class="lab halo" x="1090.0" y="539.0" text-anchor="middle">SETTINGS</text>
+    <text class="ann halo" x="1090.0" y="563.0" text-anchor="middle">per device:</text>
+    <text class="code halo" x="1090.0" y="583.0" text-anchor="middle">_templates</text>
+    <text class="code halo" x="1090.0" y="603.0" text-anchor="middle">_attachments</text>
+    <circle cx="1090.0" cy="509.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="1090.0" y="515.0" text-anchor="middle">6</text>
+    <rect x="1192" y="675.0" width="160" height="170" fill="#0b3d6e"/>
+    <rect class="hatch" x="1192" y="675.0" width="160" height="170"/>
+    <text class="lab halo" x="1272.0" y="729.0" text-anchor="middle">CLAUDE</text>
+    <text class="ann halo" x="1272.0" y="753.0" text-anchor="middle">connector in</text>
+    <text class="ann halo" x="1272.0" y="773.0" text-anchor="middle">claude.ai</text>
+    <text class="ann halo" x="1272.0" y="793.0" text-anchor="middle">skills: plugin</text>
+    <text class="ann halo" x="1272.0" y="813.0" text-anchor="middle">or zips</text>
+    <circle cx="1272.0" cy="699.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="1272.0" y="705.0" text-anchor="middle">7</text>
+    <rect class="solid" x="1374" y="85.0" width="160" height="150"/>
+    <text class="lab" x="1454.0" y="139.0" text-anchor="middle">CHECK</text>
+    <text class="code" x="1454.0" y="163.0" text-anchor="middle">doctor.sh</text>
+    <text class="ann" x="1454.0" y="183.0" text-anchor="middle">checks the</text>
+    <text class="ann" x="1454.0" y="203.0" text-anchor="middle">setup</text>
+    <circle cx="1454.0" cy="109.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="1454.0" y="115.0" text-anchor="middle">8</text>
+    <rect x="1374" y="685.0" width="160" height="150" fill="#0b3d6e"/>
+    <rect class="hatch" x="1374" y="685.0" width="160" height="150"/>
+    <text class="lab halo" x="1454.0" y="739.0" text-anchor="middle">ASK CLAUDE</text>
+    <text class="ann halo" x="1454.0" y="763.0" text-anchor="middle">&quot;set up a</text>
+    <text class="ann halo" x="1454.0" y="783.0" text-anchor="middle">topic for X&quot;</text>
+    <circle cx="1454.0" cy="709.0" r="15" fill="#7fdbff"/>
+    <text class="num" x="1454.0" y="715.0" text-anchor="middle">8</text>
+    <path class="w" d="M260 160.0 L282 160.0" marker-end="url(#aw)"/>
+    <path class="w" d="M442 160.0 L464 160.0" marker-end="url(#aw)"/>
+    <path class="w" d="M624 160.0 L646 160.0" marker-end="url(#aw)"/>
+    <path class="w" d="M806 160.0 L817 160.0 L817 360.0 L828 360.0" marker-end="url(#aw)"/>
+    <path class="c" d="M908.0 435.0 L908.0 485.0" marker-end="url(#ac)" marker-start="url(#ac)"/>
+    <path class="w" d="M988 560.0 L1010 560.0" marker-end="url(#aw)"/>
+    <path class="w" d="M1170 560.0 L1181 560.0 L1181 760.0 L1192 760.0" marker-end="url(#aw)"/>
+    <path class="w" d="M1352 760.0 L1363 760.0 L1363 160.0 L1374 160.0" marker-end="url(#aw)"/>
+    <path class="w" d="M1454.0 235.0 L1454.0 685.0" marker-end="url(#aw)"/>
+    <text class="ann" x="100" y="300">1-4: once per server, with no vault</text>
+    <text class="ann" x="100" y="322">5: once per vault</text>
+    <text class="ann" x="100" y="344">6: once per device</text>
+    <text class="ann" x="100" y="366">7: once per claude account</text>
+    <text class="ann" x="100" y="500">other devices: a fresh setup uri</text>
+    <text class="ann" x="100" y="522">from the first device; download only</text>
+  </g>
+  <g id="title-block">
+  <rect x="1048" y="872" width="520" height="196" fill="#0b3d6e" stroke="#ffffff" stroke-width="2"/>
+  <path class="margin" d="M1048 912H1568M1048 958H1568M1048 996H1568M1268 958V996M1388 958V996"/>
+  <text class="tbk" x="1060" y="898">PROJECT</text>
+  <text class="big" x="1168" y="899">OBSIDIAN-LIVESYNC-MCP</text>
+  <text class="tbk" x="1060" y="941">TITLE</text>
+  <text class="big" x="1168" y="942">SETUP ORDER</text>
+  <text class="lab" x="1060" y="983">SHEET 2 / 3</text>
+  <text class="lab" x="1280" y="983">REV 1</text>
+  <text class="lab" x="1400" y="983">2026-10-11</text>
+  <rect class="solid" x="1060" y="1008" width="34" height="18"/>
+  <text class="ann" x="1102" y="1022">AUTOMATIC</text>
+  <rect x="1196" y="1008" width="34" height="18" class="hatch"/>
+  <text class="ann" x="1238" y="1022">YOU</text>
+  <path class="w" d="M1288 1017H1338" marker-end="url(#aw)"/>
+  <text class="ann" x="1348" y="1022">data, next step</text>
+  <path class="w d" d="M1060 1047H1110" marker-end="url(#aw)"/>
+  <text class="ann" x="1120" y="1052">timer job, optional</text>
+  <path class="c" d="M1310 1047H1360" marker-end="url(#ac)" marker-start="url(#ac)"/>
+  <text class="ann" x="1370" y="1052">two-way sync</text>
+  </g>
+</svg>
