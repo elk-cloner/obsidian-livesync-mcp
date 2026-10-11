@@ -20,9 +20,9 @@ RUN git clone --depth 1 --branch "${BRIDGE_REF}" \
 ENV DENO_DIR=/deno-dir
 RUN mkdir -p /deno-dir && deno install --allow-scripts || deno install
 
-# The upstream image runs as 1993; match it so /srv/vaults ownership lines up.
-RUN groupadd -g 1993 bridge && useradd -u 1993 -g 1993 -m bridge \
- && chown -R 1993:1993 /app /deno-dir
+# The base image already ships a `deno` user with uid/gid 1993 (creating it
+# again fails the build). Run as it so /srv/vaults ownership lines up.
+RUN chown -R 1993:1993 /app /deno-dir
 USER 1993:1993
 
 CMD ["deno", "task", "run"]
