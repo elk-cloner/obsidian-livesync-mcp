@@ -3,6 +3,8 @@
 
     python3 skills/tools/build.py sync      copy _shared/ into every skill's references/
     python3 skills/tools/build.py check     fail if a copy drifted or a SKILL.md is invalid
+    python3 skills/tools/build.py check --tag skills-vX.Y.Z
+                                            also fail unless X.Y.Z is the plugin.json version
     python3 skills/tools/build.py package   sync, check, then write dist/<skill>.zip
 
 Why copies: claude.ai uploads each skill as its own zip, and Claude Code does
@@ -14,6 +16,7 @@ Standard library only.
 """
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import sys
@@ -24,12 +27,14 @@ SKILLS = Path(__file__).resolve().parent.parent
 REPO = SKILLS.parent
 SHARED = SKILLS / "_shared"
 DIST = REPO / "dist"
+PLUGIN_JSON = SKILLS / ".claude-plugin" / "plugin.json"
 
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 NAME_MAX = 64
 DESCRIPTION_MAX = 1024
 PREFIX = "vault-"
 SKIP_IN_ZIP = {"__pycache__", ".DS_Store"}
+TAG_RE = re.compile(r"^skills-v(\d+\.\d+\.\d+)$")
 
 
 def skill_dirs() -> list[Path]:
@@ -61,8 +66,15 @@ def sync() -> None:
     print(f"synced {SHARED.relative_to(REPO)} into {len(skill_dirs())} skills")
 
 
-def check() -> int:
+def check(tag: str | None = None) -> int:
     problems: list[str] = []
+    if tag is not None:
+        version = json.loads(PLUGIN_JSON.read_text(encoding="utf-8")).get("version", "")
+        match = TAG_RE.match(tag)
+        if not match:
+            problems.append(f"tag {tag!r} must look like skills-vX.Y.Z (for example skills-v{version or '1.0.0'})")
+        elif match.group(1) != version:
+            problems.append(f"tag {tag!r} does not match version {version!r} in {PLUGIN_JSON.relative_to(REPO)}")
     shared = {p.name: p.read_bytes() for p in SHARED.iterdir() if p.is_file()}
     skills = skill_dirs()
     if not skills:
@@ -123,6 +135,8 @@ def package() -> int:
 
 def main(argv: list[str]) -> int:
     commands = {"sync": lambda: sync() or 0, "check": check, "package": package}
+    if len(argv) == 4 and argv[1] == "check" and argv[2] == "--tag":
+        return check(argv[3])
     if len(argv) != 2 or argv[1] not in commands:
         print(__doc__, file=sys.stderr)
         return 2

@@ -1,0 +1,58 @@
+# Release the vault skills.
+#
+# To release: bump "version" in skills/.claude-plugin/plugin.json, commit, then
+#   git tag skills-vX.Y.Z && git push origin skills-vX.Y.Z
+# The tag must match the version, or the check step fails. This workflow then
+# builds one zip per skill and attaches them to a GitHub release for the tag.
+
+name: skills-release
+
+on:
+  push:
+    tags:
+      - "skills-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Check skills and tag
+        run: python3 skills/tools/build.py check --tag "$GITHUB_REF_NAME"
+
+      - name: Package skills
+        run: python3 skills/tools/build.py package
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#skills-v}"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "::error::Release $GITHUB_REF_NAME already exists. Delete it or tag a new version."
+            exit 1
+          fi
+          cat > "$RUNNER_TEMP/notes.md" <<'NOTES'
+          **claude.ai:** in Settings → Capabilities → Skills, remove your old `vault-*` skills. Then download the zips below and upload each one.
+
+          **Claude Code:**
+
+          ```
+          claude plugin marketplace add elk-cloner/obsidian-livesync-mcp
+          claude plugin install vault@obsidian-livesync-mcp
+          ```
+
+          If you installed the plugin before, run `claude plugin marketplace update obsidian-livesync-mcp` and then `claude plugin update vault@obsidian-livesync-mcp`.
+          NOTES
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --title "Vault skills ${version}" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --verify-tag
