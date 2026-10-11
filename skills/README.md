@@ -1,27 +1,29 @@
 # Vault skills
 
-Thirteen Claude skills that read and write a knowledge vault following the
-schema in [`../vault/template/CLAUDE.md`](../vault/template/CLAUDE.md). They run
-on Claude Code and on claude.ai (web, iPhone, iPad), through the vault MCP
-server or on a local folder.
+This folder has thirteen Claude skills. They read and write a knowledge vault
+that follows the schema in
+[`../vault/template/CLAUDE.md`](../vault/template/CLAUDE.md).
+
+The skills run on Claude Code and on claude.ai (web, iPhone, iPad). They use
+the vault MCP server or a local folder.
 
 ## Skills
 
 | Skill | Writes to | Purpose |
 |---|---|---|
 | `vault-init-area` | new area | Create a topic or a project |
-| `vault-where` | nothing | Decide the type and the area of a piece of information |
+| `vault-where` | nothing | Find the type and the area of a piece of information |
 | `vault-capture-finding` | findings/ | Create one finding |
-| `vault-capture-decision` | decisions/ | Create one decision; supersede an old one |
+| `vault-capture-decision` | decisions/ | Create one decision; supersede an old decision |
 | `vault-capture-record` | records/ | Create one dated event in a project |
 | `vault-capture-question` | questions/ | Open, answer or drop a question |
 | `vault-update-concept` | concepts/ | Rewrite one concept |
-| `vault-task` | tasks/ | Create, update, complete, list tasks |
+| `vault-task` | tasks/ | Create, update, complete and list tasks |
 | `vault-ingest` | sources/ | Create one source note |
-| `vault-brief` | outputs/ (optional) | Answer from the vault; file the answer on request |
+| `vault-brief` | outputs/ (optional) | Answer from the vault; file the answer if you ask |
 | `vault-lint` | lint-report.md | Run structural lint; propose semantic fixes |
-| `vault-session` | many | Review a session; write approved items |
-| `vault-learning-path` | learning-path.md | Maintain the ordered tutorial of a topic |
+| `vault-session` | many | Review a session; write the approved items |
+| `vault-learning-path` | learning-path.md | Keep the ordered tutorial of a topic |
 
 ## Which skill
 
@@ -39,71 +41,107 @@ server or on a local folder.
 | Wrap up | `vault-session` |
 | Where does this go | `vault-where` |
 
-## How they reach the vault
+## Access to the vault
 
-Every skill first reads `references/access.md`, then the vault's root
-`CLAUDE.md`.
+Each skill first reads `references/access.md`. Then it reads the root
+`CLAUDE.md` of the vault. The skill uses one of two access modes:
 
-- **MCP mode** is used whenever the vault MCP connector is available. The skill
-  calls `list_vaults`, uses the only vault or asks which one, and takes dates
-  from `vault_now`. This is the mode on claude.ai.
-- **Filesystem mode** is the fallback. The vault root is the one line in
-  `~/.config/vault/root`, and dates come from `date -u`.
+| Mode | When | Vault | Dates |
+|---|---|---|---|
+| **MCP mode** | The vault connector is available. This is the mode on claude.ai. | The skill calls `list_vaults`. If there is one vault, it uses that vault. If not, it asks which vault. | From `vault_now` |
+| **Filesystem mode** | The connector is not available. | The root of the vault is the one line in `~/.config/vault/root`. | From `date -u` |
 
-Both modes keep the current area in the note `_state/current-area.md`, so
-every device agrees on it. All dates and times are UTC.
+In both modes, the note `_state/current-area.md` holds the current area. Thus
+all devices agree on the current area. All dates and times are UTC.
 
 ## Install on Claude Code
 
-From the terminal:
+1. Run these commands in a terminal:
+
+   ```bash
+   claude plugin marketplace add elk-cloner/obsidian-livesync-mcp
+   claude plugin install vault@obsidian-livesync-mcp
+   ```
+
+   **Result:** The skills show as `vault:vault-brief`, `vault:vault-task`
+   and so on.
+2. For MCP mode, add the connector (`https://mcp.<domain>/mcp`) in claude.ai.
+   Claude Code uses the connectors of claude.ai.
+3. For filesystem mode, set up a local folder. Read
+   [`../vault/README.md`](../vault/README.md).
+
+To update an installed plugin, run these commands:
 
 ```bash
-claude plugin marketplace add elk-cloner/obsidian-livesync-mcp
-claude plugin install vault@obsidian-livesync-mcp
+claude plugin marketplace update obsidian-livesync-mcp
+claude plugin update vault@obsidian-livesync-mcp
 ```
 
-The skills then appear as `vault:vault-brief`, `vault:vault-task`, and so on.
-To try a checkout without installing anything:
+To try the skills of a checkout with no installation, run this command:
 
 ```bash
 claude --plugin-dir ./skills
 ```
 
-For MCP mode, add the connector (`https://mcp.<domain>/mcp`) in claude.ai; Claude
-Code picks up claude.ai connectors. Otherwise set up a local folder as in
-[`../vault/README.md`](../vault/README.md).
-
 ## Install on claude.ai
 
-1. Remove the old `vault-*` skills first, in **Settings → Capabilities →
-   Skills**. Several new skills reuse their names.
-2. Build the zips:
+Several new skills use the names of old skills. Thus you must remove the old
+skills before you upload the new skills.
 
-   ```bash
-   python3 skills/tools/build.py package
-   ```
+1. In **Settings → Capabilities → Skills**, remove the old `vault-*` skills.
+2. Download the zips from the latest release:
+   <https://github.com/elk-cloner/obsidian-livesync-mcp/releases/latest>.
+   - The link to one zip is
+     `https://github.com/elk-cloner/obsidian-livesync-mcp/releases/latest/download/<skill>.zip`.
+   - **If it fails:** Build the zips from a checkout. Run
+     `python3 skills/tools/build.py package`. This command writes one zip for
+     each skill into `dist/`.
+3. In **Settings → Capabilities → Skills**, upload each zip.
+4. Make sure that the same account has the vault connector, and that the
+   connector is enabled.
 
-   That writes one zip per skill into `dist/`.
-3. Upload each zip in **Settings → Capabilities → Skills**.
-4. Make sure the vault connector is added and enabled in the same account.
+If the skills change, upload the changed zips again.
 
-Re-upload the changed zips after pulling skill changes.
+## Edit the skills
 
-## Editing the skills
-
-- Shared rules live once in [`_shared/access.md`](_shared/access.md). Each
-  skill carries a copy in `references/`, because a claude.ai zip cannot reach
-  outside its own folder. After editing `_shared/`, run:
+- The shared rules are in one file:
+  [`_shared/access.md`](_shared/access.md). Each skill has a copy in
+  `references/`, because a claude.ai zip cannot read files outside its own
+  folder. After you edit `_shared/`, run this command:
 
   ```bash
   python3 skills/tools/build.py sync
   ```
 
-- `python3 skills/tools/build.py check` fails if a copy drifted, or if a
-  `SKILL.md` breaks the claude.ai limits: name lowercase with hyphens, at most
-  64 characters, matching the folder and starting with `vault-`; description at
-  most 1,024 characters.
+- `python3 skills/tools/build.py check` fails in these conditions:
+  - A copy in `references/` is different from `_shared/`.
+  - A `SKILL.md` breaks the claude.ai limits. The name must be lowercase with
+    hyphens, at most 64 characters, the same as the folder, and start with
+    `vault-`. The description must be at most 1,024 characters.
 - `vault-lint/scripts/lint.py` is the only lint implementation. The MCP server
-  builds it into its image for the `lint_vault` tool, so a change here reaches
-  the server on its next `docker compose build mcp`.
-- The vault `CLAUDE.md` wins over any skill. Change the schema there first.
+  puts it into its image for the `lint_vault` tool. Thus a change here goes to
+  the server at the next `docker compose build mcp`.
+- The vault `CLAUDE.md` has priority over each skill. Change the schema there
+  first.
+
+## Release (maintainers)
+
+A GitHub workflow (`.github/workflows/skills-release.yml`) publishes the
+skills. To release a new version:
+
+1. In `skills/.claude-plugin/plugin.json`, increase `version`.
+2. Commit the change.
+3. Tag the commit and push the tag:
+
+   ```bash
+   git tag skills-vX.Y.Z && git push origin skills-vX.Y.Z
+   ```
+
+   **Result:** The workflow starts. It does these steps:
+   - **SCRIPT:** It checks that the tag agrees with the version
+     (`python3 skills/tools/build.py check --tag skills-vX.Y.Z`).
+   - **SCRIPT:** It builds the zips.
+   - **SCRIPT:** It creates a GitHub release for the tag, with the zips.
+
+   **If it fails:** If a release for the tag exists, the workflow stops. It
+   does not overwrite a release. Delete the release, or tag a new version.
