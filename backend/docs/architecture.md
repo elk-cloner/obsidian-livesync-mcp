@@ -15,8 +15,7 @@ scheduled job. The GitHub push is optional, and it is off by default.
 
 The backend runs with no vaults. `scripts/add-vault.sh` and
 `scripts/remove-vault.sh` add and remove vaults one at a time
-([`vaults.md`](vaults.md)). The older drawing of the same system is
-[`architecture.svg`](architecture.svg).
+([`vaults.md`](vaults.md)).
 
 ## Components
 
