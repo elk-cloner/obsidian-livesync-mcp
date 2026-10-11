@@ -173,6 +173,8 @@ def write_atomic(target: Path, content: str) -> int:
     handle, staged = tempfile.mkstemp(dir=target.parent, prefix=".livesync-mcp-", suffix=".tmp")
     try:
         with os.fdopen(handle, "wb") as stream:
+            # mkstemp creates 0600; notes are 0644 like the ones seed-vault writes.
+            os.fchmod(stream.fileno(), 0o644)
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())

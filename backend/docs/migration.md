@@ -37,13 +37,13 @@ until a week of clean sync has passed.
 ### 3. Add the vault
 
 Follow [`vaults.md`](vaults.md): run `sudo ./scripts/add-vault.sh <vault>`,
-then for the first device open `~/Vaults/<vault>` in Obsidian as a vault and
-let the full upload finish, then run `add-vault.sh` again so the bridge mirrors
-it to the server.
+then, while it waits, open `~/Vaults/<vault>` in Obsidian as a vault for the
+first device and let the full upload finish. Once the upload settles,
+`add-vault.sh` connects the vault and the bridge mirrors it to the server.
 
 ### 4. Verify against the mirror
 
-Once the second `add-vault.sh` run has finished:
+Once `add-vault.sh` reports the vault as connected:
 
 ```bash
 # Counts should match what you noted in step 1.

@@ -7,7 +7,7 @@ is what prevents the "tweak mismatch" warnings.
 
 ## Where Setup URIs come from
 
-- **First device of a vault:** the first run of `add-vault.sh` prints one,
+- **First device of a vault:** `add-vault.sh` prints one,
   with its one-time passphrase ([`vaults.md`](vaults.md)).
 - **Every other device:** copy one from a device that already syncs the vault
   (see below). No server step.
@@ -93,6 +93,6 @@ divergent document trees in one database.
 ## Where this fits
 
 Onboarding happens inside adding a vault ([`vaults.md`](vaults.md)): run
-`add-vault.sh` once to create the database, onboard the first device, run
-`add-vault.sh` again to connect the server, then onboard the remaining devices.
-Finish one vault before starting the next.
+`add-vault.sh`, onboard the first device while it waits, and it connects the
+vault to the server once the upload has settled. Then onboard the remaining
+devices. Finish one vault before starting the next.

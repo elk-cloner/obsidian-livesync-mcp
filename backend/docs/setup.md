@@ -96,7 +96,8 @@ which is loaded at startup. Each vault's database is created later by
 sudo ./scripts/gen-bridge-config.sh    # writes bridge/config.json with no vaults
 ```
 
-Do not start the bridge yet; the first `add-vault.sh` does that. Generating the
+Do not start the bridge yet; `add-vault.sh` starts it when it connects the
+first vault. Generating the
 file now matters anyway: if `bridge/config.json` is missing when anything
 starts the bridge, Docker silently creates a *directory* in its place and the
 bridge fails with a confusing parse error.

@@ -3,6 +3,9 @@ Description=Hourly staleness check on the Obsidian vault mirror
 
 [Timer]
 OnBootSec=10min
+# Also count from when the timer starts: on a host already up longer than
+# OnBootSec, a unit that has never run would otherwise never be scheduled.
+OnActiveSec=10min
 OnUnitActiveSec=1h
 Persistent=true
 

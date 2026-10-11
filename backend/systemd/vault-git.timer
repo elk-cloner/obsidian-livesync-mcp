@@ -3,6 +3,9 @@ Description=Commit the Obsidian vault mirror every 15 minutes
 
 [Timer]
 OnBootSec=5min
+# Also count from when the timer starts: on a host already up longer than
+# OnBootSec, a unit that has never run would otherwise never be scheduled.
+OnActiveSec=5min
 OnUnitActiveSec=15min
 # Spread the load off exact quarter hours.
 RandomizedDelaySec=60

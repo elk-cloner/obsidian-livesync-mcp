@@ -59,9 +59,9 @@ Add the connector at `https://mcp.<domain>/mcp` in claude.ai.
 **2. Vaults**, in full in [`docs/vaults.md`](docs/vaults.md):
 
 ```bash
-sudo ./scripts/add-vault.sh <name>    # creates the database
-# connect the first device and let it upload (docs/onboarding.md)
-sudo ./scripts/add-vault.sh <name>    # connects the vault to the server
+sudo ./scripts/add-vault.sh <name>    # creates the database, prints a Setup URI,
+                                      # waits while the first device uploads
+                                      # (docs/onboarding.md), then connects it
 sudo ./scripts/seed-vault.sh <name>   # new vault: puts the schema in (../vault/)
 ```
 

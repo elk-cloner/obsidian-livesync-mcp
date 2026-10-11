@@ -75,6 +75,8 @@ n = vaults.write_atomic(target, "written\n")
 ok("creates parents and writes", target.read_text() == "written\n" and n == 8)
 leftovers = list((V / "demo" / "new" / "deep").glob(".livesync-mcp-*"))
 ok(f"no staging files left behind (got {leftovers})", not leftovers)
+mode = target.stat().st_mode & 0o777
+ok(f"written note is 0644 (got {oct(mode)})", mode == 0o644)
 
 print("-- write size cap")
 vaults.MAX_WRITE_BYTES = 10
