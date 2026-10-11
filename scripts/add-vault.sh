@@ -3,8 +3,9 @@
 #
 #   sudo ./scripts/add-vault.sh <name>
 #
-#   1st run  creates the vault's CouchDB database and tells you how to connect
-#            the first device. Nothing else changes yet.
+#   1st run  creates the vault's CouchDB database and prints a Setup URI for
+#            the first device. Nothing else changes yet. Running it again
+#            before that device has uploaded just prints a fresh URI.
 #   2nd run  (after that device finished its first upload) wires the vault in:
 #            VAULTS in .env, its folder in /srv/vaults, local history, the
 #            GitHub repo if GIT_PUSH=github, and the bridge.
@@ -40,6 +41,32 @@ fi
 
 work="$VAULT_ROOT/$name"
 
+# Upstream's Setup URI generator, pinned to a commit so a rebuild cannot
+# silently change the settings devices receive. It runs from the raw URL with
+# its own pinned npm dependencies.
+SETUP_URI_REF="${SETUP_URI_REF:-14141446a14deab3353a8864dee41e44c372d006}"
+SETUP_URI_GENERATOR="https://raw.githubusercontent.com/vrtmrz/obsidian-livesync/$SETUP_URI_REF/utils/flyio/generate_setupuri.ts"
+
+# Print a Setup URI for this vault's first device.
+#
+# id_mode=legacy matters: newer LiveSync defaults to a random per-vault ID key,
+# but livesync-bridge cannot be given that key, so it would compute different
+# document IDs from the devices'. Legacy IDs derive from LIVESYNC_PASSPHRASE,
+# which the bridge has. This also means there is no ID recovery code to keep.
+print_setup_uri() {
+    if ! command -v deno >/dev/null 2>&1; then
+        echo "ERROR: Deno 2 is needed to generate the Setup URI (see docs/setup.md, section 2)." >&2
+        exit 1
+    fi
+    hostname="https://couch.$DOMAIN" \
+    username="$COUCHDB_USER" \
+    password="$COUCHDB_PASSWORD" \
+    database="$name" \
+    passphrase="$LIVESYNC_PASSPHRASE" \
+    id_mode=legacy \
+        deno run --quiet --minimum-dependency-age=0 --allow-env "$SETUP_URI_GENERATOR"
+}
+
 # A previously removed copy must come back before the vault is re-added, so the
 # bridge finds the files it remembers instead of an empty folder.
 if [[ ! -d "$work" ]] && compgen -G "$REMOVED_ROOT/$name-*" >/dev/null; then
@@ -65,21 +92,27 @@ if ! vault_configured "$name"; then
     fi
 
     if [[ "$notes" -eq 0 ]]; then
+        echo
+        echo "Database '$name' is ready. Setup URI for its FIRST device:"
+        print_setup_uri
         cat <<EOF
 
-Database '$name' is ready. Next, connect the FIRST device (see docs/onboarding.md):
+The URI and its passphrase are only for setting up this one device, right
+away; there is nothing here you need to keep. To connect it (docs/onboarding.md):
 
-  1. Generate a Setup URI for database '$name' (docs/onboarding.md shows how).
-  2. On a desktop, open the vault in Obsidian:
-       - new vault:      create an empty vault in Obsidian
+  1. On a desktop, open the vault in Obsidian:
+       - new vault:      create an empty vault
        - existing notes: open that vault's folder
                          (if it lives in Google Drive, follow docs/migration.md first)
-  3. Install Self-hosted LiveSync, import the Setup URI, and let the first
-     upload finish completely.
+  2. Install Self-hosted LiveSync, choose to import a Setup URI, paste the URI
+     above, and enter its passphrase. Do not set LiveSync up by hand instead.
+  3. Let the first upload finish completely.
 
 Then run this again to connect the vault to the server:
 
   sudo $0 $name
+
+(Running it before the upload has finished just prints a fresh URI.)
 EOF
         exit 0
     fi

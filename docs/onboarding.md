@@ -1,13 +1,31 @@
 # Device onboarding
 
-Devices are onboarded with a **Setup URI** — a single encrypted string holding
+Devices are onboarded with a **Setup URI**: a single encrypted string holding
 the server URL, credentials and passphrase. It beats typing an E2EE passphrase
 into an iPhone, and it guarantees every device uses identical settings, which
 is what prevents the "tweak mismatch" warnings.
 
-## Generate a Setup URI
+## Where Setup URIs come from
 
-On the server (needs Deno 2):
+- **First device of a vault:** the first run of `add-vault.sh` prints one,
+  with its one-time passphrase ([`vaults.md`](vaults.md)).
+- **Every other device:** copy one from a device that already syncs the vault
+  (see below). No server step.
+
+A Setup URI and its passphrase are only for setting up a device, right away.
+The generator says "store it safely", but there is nothing to keep: the URI
+expires (at the next Thursday 00:00 UTC, so possibly within hours; the exact
+time is printed), and a fresh one is always one command or one click away.
+
+**Always set devices up from a Setup URI, never by hand.** Newer LiveSync
+versions default a new vault to a random "ID key", which changes how document
+IDs are computed. livesync-bridge cannot be given that key, so it would stop
+matching the devices' documents. The URIs from `add-vault.sh` use legacy IDs
+derived from `LIVESYNC_PASSPHRASE`; that is also why there is no ID recovery
+code to save. If LiveSync ever asks about the ID key, choose **Keep current
+configuration**.
+
+To generate a first-device URI again without `add-vault.sh` (on the server):
 
 ```bash
 cd /opt/obsidian-self-host
@@ -18,21 +36,10 @@ database="<vault>" \
 username="$COUCHDB_USER" \
 password="$COUCHDB_PASSWORD" \
 passphrase="$LIVESYNC_PASSPHRASE" \
-uri_passphrase="<a short one-time code you'll type on the device>" \
-  deno run --allow-env --allow-net \
-  https://raw.githubusercontent.com/vrtmrz/obsidian-livesync/main/utils/couchdb/generate_setup_uri.ts
+id_mode=legacy \
+  deno run --minimum-dependency-age=0 --allow-env \
+  https://raw.githubusercontent.com/vrtmrz/obsidian-livesync/14141446a14deab3353a8864dee41e44c372d006/utils/flyio/generate_setupuri.ts
 ```
-
-Three separate secrets are in play here; keep them distinct:
-
-| Secret | Purpose |
-|---|---|
-| `passphrase` | the vault's E2EE key — same on every device, forever |
-| `uri_passphrase` | protects this one URI in transit; throwaway |
-| `id_recovery_code` | printed on first run; save it to regenerate URIs later |
-
-The URI is ephemeral and expires. Generate it when you are at the device, not
-in advance.
 
 ## First device
 
@@ -41,8 +48,9 @@ because its first sync is a full upload.
 
 1. Obsidian → Settings → Community plugins → browse → **Self-hosted LiveSync**
    → install and enable.
-2. In the plugin's setup wizard, choose to import a Setup URI and paste it.
-3. Enter the `uri_passphrase`.
+2. In the plugin's setup wizard, choose to import a Setup URI and paste the one
+   from `add-vault.sh`.
+3. Enter the passphrase printed with it.
 4. Accept the suggested settings. When asked about the "Hidden File Sync"
    feature, **decline** — device config is deliberately not synced here
    (see the decision note in [`runbook.md`](runbook.md)).
@@ -63,8 +71,8 @@ provisioning-time one:
 
 Obsidian → Self-hosted LiveSync settings → **Setup URI** → copy / show QR.
 
-Then on the new device: install the plugin, import the URI, enter the
-`uri_passphrase`, and let it sync down.
+Then on the new device: install the plugin, import the URI, enter its
+passphrase, and let it sync down.
 
 ### iPhone and iPad
 

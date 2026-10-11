@@ -12,6 +12,12 @@ REMOVED_ROOT="${REMOVED_ROOT:-/srv/vaults-removed}"
 # owned by it, or both containers can read but not write.
 VAULT_UID="${VAULT_UID:-1993}"
 
+# Deno's installer puts it in ~/.deno/bin, which non-login shells (sudo,
+# systemd) do not have on PATH.
+if [[ -n "${HOME:-}" && -d "$HOME/.deno/bin" ]]; then
+    PATH="$HOME/.deno/bin:$PATH"
+fi
+
 if [[ -f "$ENV_FILE" ]]; then
     set -a
     # shellcheck disable=SC1090

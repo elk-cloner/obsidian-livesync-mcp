@@ -18,15 +18,18 @@ Names may use letters, digits, `.`, `_` and `-`, and must not start with `.`.
 The name becomes the CouchDB database, the folder `/srv/vaults/<name>`, the
 history repo and, if GitHub push is on, the GitHub repo.
 
-### 1. First run: the database
+### 1. First run: the database and a Setup URI
 
-Creates the vault's CouchDB database and prints what to do next. Nothing else
-changes yet: the vault is not in `VAULTS`, so the bridge and timers ignore it.
+Creates the vault's CouchDB database and prints a Setup URI with its one-time
+passphrase, for the first device. Nothing else changes yet: the vault is not
+in `VAULTS`, so the bridge and timers ignore it. Running it again before the
+first upload just prints a fresh URI. Nothing it prints needs to be kept
+([`onboarding.md`](onboarding.md) explains why).
 
 ### 2. Connect the first device
 
 On a desktop, follow [`onboarding.md`](onboarding.md) for the first device,
-using a Setup URI for this database. The only difference between new and
+importing the Setup URI from step 1. Don't set LiveSync up by hand. The only difference between new and
 existing notes is which folder you open in Obsidian:
 
 - **New vault:** create an empty vault in Obsidian.

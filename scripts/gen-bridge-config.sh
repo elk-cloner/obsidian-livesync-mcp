@@ -34,7 +34,10 @@ for vault in vaults:
         "username": os.environ["COUCHDB_USER"],
         "password": os.environ["COUCHDB_PASSWORD"],
         "passphrase": os.environ["LIVESYNC_PASSPHRASE"],
-        "obfuscatePassphrase": os.environ.get("LIVESYNC_OBFUSCATE_PASSPHRASE", ""),
+        # Setup URIs from add-vault.sh turn path obfuscation on and key it with
+        # the E2EE passphrase; the bridge refuses to start without a match.
+        "obfuscatePassphrase": os.environ.get("LIVESYNC_OBFUSCATE_PASSPHRASE")
+            or os.environ["LIVESYNC_PASSPHRASE"],
         # Whole vault, not a subfolder.
         "baseDir": "",
         "useRemoteTweaks": True,

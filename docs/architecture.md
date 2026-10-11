@@ -155,5 +155,5 @@ both versions as a conflict and LiveSync asks you to resolve it.
 |---|---|---|---|
 | `COUCHDB_PASSWORD` | devices, bridge, `.env` | reset it as admin | someone can sync with the server, but sees only encrypted data |
 | `LIVESYNC_PASSPHRASE` | devices, bridge | **vaults are unrecoverable** | the stored data becomes readable |
-| `LIVESYNC_OBFUSCATE_PASSPHRASE` | devices, bridge | must match to sync | note names become readable |
-| Setup URI `uri_passphrase` | you, for one onboarding | generate a new URI | only that one URI is exposed |
+| `LIVESYNC_OBFUSCATE_PASSPHRASE` (defaults to the E2EE passphrase) | devices, bridge | must match to sync | note names become readable |
+| Setup URI passphrase | you, for one onboarding | generate a new URI | only that one URI is exposed |
