@@ -5,27 +5,27 @@ the steps are the same whether the notes are brand new or already exist.
 
 ## Add a vault
 
-`add-vault.sh` is one command that you run twice. Between the two runs, the
-first device uploads the vault.
+`add-vault.sh` does the whole job in one run. It creates the database, prints
+a Setup URI, waits while you connect the first device, and connects the vault
+to the server once that device has uploaded.
 
 ```bash
-sudo ./scripts/add-vault.sh <name>      # 1. creates the database
-# ... connect the first device and let it upload ...
-sudo ./scripts/add-vault.sh <name>      # 2. connects the vault to the server
-sudo ./scripts/seed-vault.sh <name>     # 3. new vault: puts the schema in
+sudo ./scripts/add-vault.sh <name>      # 1-3. database, first device, connect
+sudo ./scripts/seed-vault.sh <name>     # 4. new vault: puts the schema in
 ```
 
 Names may use letters, digits, `.`, `_` and `-`, and must not start with `.`.
 The name becomes the CouchDB database, the folder `/srv/vaults/<name>`, the
 history repo and, if GitHub push is on, the GitHub repo.
 
-### 1. First run: the database and a Setup URI
+### 1. The database and a Setup URI
 
-Creates the vault's CouchDB database and prints a Setup URI with its one-time
-passphrase, for the first device. Nothing else changes yet: the vault is not
-in `VAULTS`, so the bridge and timers ignore it. Running it again before the
-first upload just prints a fresh URI. Nothing it prints needs to be kept
-([`onboarding.md`](onboarding.md) explains why).
+`add-vault.sh` creates the vault's CouchDB database and prints a Setup URI
+with its one-time passphrase, for the first device. Nothing else changes yet:
+the vault is not in `VAULTS`, so the bridge and timers ignore it. Nothing it
+prints needs to be kept ([`onboarding.md`](onboarding.md) explains why).
+
+Then it waits, watching the database. Leave it running while you do step 2.
 
 ### 2. Connect the first device
 
@@ -40,11 +40,13 @@ existing notes is which folder you open in Obsidian:
 Let the first upload finish completely.
 
 The order matters: the first device writes the database's LiveSync settings,
-and the bridge reads them when it connects.
+and the bridge reads them when it connects. That is why `add-vault.sh` waits.
 
-### 3. Second run: connect it to the server
+### 3. Connect it to the server
 
-Run the same command again. Once the database holds the uploaded notes, it:
+As soon as documents appear in the database, `add-vault.sh` shows the count
+and waits for the upload to settle: no change for 30 seconds. Then, in the
+same run, it:
 
 1. creates the private GitHub repo, or reuses an existing one (only when
    `GIT_PUSH=github`; it tells you before creating anything);
@@ -57,6 +59,18 @@ Run the same command again. Once the database holds the uploaded notes, it:
 From then on Claude can see the vault, and the git, backup and staleness timers
 include it. A brand-new empty vault makes the staleness check warn until it
 has a note; that is expected.
+
+### If the wait is interrupted
+
+Ctrl+C while it waits is safe: only the database exists at that point. Run
+the same command again to carry on. If the database is still empty, it prints
+a fresh URI and waits again; if the first device has uploaded, it connects the
+vault straight away. If no upload starts within an hour, it stops by itself
+with the same advice.
+
+For scripts, `--no-wait` keeps the older behaviour: it prints the URI and
+exits. Run `sudo ./scripts/add-vault.sh <name>` again once the first upload
+has finished, and that run connects the vault.
 
 ### 4. Seed the schema
 
@@ -131,8 +145,9 @@ sudo mv /srv/vaults-removed/<name>-<timestamp> /srv/vaults/<name>
 sudo ./scripts/add-vault.sh <name>
 ```
 
-If the database was kept, it still holds the notes, so one run connects the
-vault straight away.
+If the database was kept, it still holds the notes, so `add-vault.sh` prints
+no Setup URI: it checks for 30 seconds that nothing is still uploading, then
+connects the vault.
 
 `add-vault.sh` refuses to re-add a vault while its files are still parked, so
 the bridge never starts from an empty folder it thinks used to be full. To

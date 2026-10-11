@@ -33,8 +33,9 @@ which sync rewrites per device.
 
 ## Start a vault on the server
 
-1. Add the vault: `sudo ./scripts/add-vault.sh <name>`, twice, as in
-   [`backend/docs/vaults.md`](../backend/docs/vaults.md).
+1. Add the vault: `sudo ./scripts/add-vault.sh <name>` (from `backend/`), as
+   in [`backend/docs/vaults.md`](../backend/docs/vaults.md). It waits while
+   you connect the first device, then connects the vault to the server.
 2. Seed it: `sudo ./scripts/seed-vault.sh <name>` (from `backend/`).
 3. On each device, set two Obsidian options, because device settings do not
    sync:

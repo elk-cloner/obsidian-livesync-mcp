@@ -1,29 +1,50 @@
 #!/usr/bin/env bash
-# Add a vault to the stack. Run it twice:
+# Add a vault to the stack, in one run:
 #
-#   sudo ./scripts/add-vault.sh <name>
+#   sudo ./scripts/add-vault.sh <name>              set up, wait, connect
+#   sudo ./scripts/add-vault.sh <name> --no-wait    set up and print the URI only
 #
-#   1st run  creates the vault's CouchDB database and prints a Setup URI for
-#            the first device. Nothing else changes yet. Running it again
-#            before that device has uploaded just prints a fresh URI.
-#   2nd run  (after that device finished its first upload) wires the vault in:
-#            VAULTS in .env, its folder in VAULT_ROOT, local history, the
-#            GitHub repo if GIT_PUSH=github, and the bridge.
+#   1. Creates the vault's CouchDB database and prints a Setup URI for the
+#      first device.
+#   2. Waits while you set that device up, watching the database until its
+#      first upload has settled.
+#   3. Wires the vault in: VAULTS in .env, its folder in VAULT_ROOT, local
+#      history, the GitHub repo if GIT_PUSH=github, and the bridge.
 #
-# The two passes exist because the first device must upload before the bridge
+# The wait exists because the first device must upload before the bridge
 # connects: it writes the database's LiveSync settings, which the bridge reads
-# (useRemoteTweaks). Re-running on a vault that is already added only re-checks
-# everything, which is also how existing vaults get GitHub repos after
-# GIT_PUSH=github is turned on.
+# (useRemoteTweaks). Until step 3 only the database exists, so Ctrl+C while
+# waiting leaves nothing half-done. Running the same command again resumes: an
+# empty database gets a fresh URI and another wait; one that already holds
+# notes (including a vault brought back after removal) connects straight away.
+# With --no-wait, run it again once the first upload has finished.
+#
+# Re-running on a vault that is already added only re-checks everything, which
+# is also how existing vaults get GitHub repos after GIT_PUSH=github is turned
+# on.
 . "$(dirname -- "${BASH_SOURCE[0]}")/_common.sh"
 
+# How users run this, from backend/ as the docs say. Used in every hint.
+SELF="./scripts/add-vault.sh"
+
 usage() {
-    echo "Usage: sudo $0 <vault-name>" >&2
+    echo "Usage: sudo $SELF <vault-name> [--no-wait]" >&2
     exit 2
 }
 
-[[ $# -eq 1 ]] || usage
-name="$1"
+wait_for_device=1
+name=""
+for arg in "$@"; do
+    case "$arg" in
+        --no-wait) wait_for_device=0 ;;
+        -*) usage ;;
+        *)
+            if [[ -n "$name" ]]; then usage; fi
+            name="$arg"
+            ;;
+    esac
+done
+[[ -n "$name" ]] || usage
 if ! valid_vault_name "$name"; then
     echo "ERROR: invalid vault name '$name'. Use letters, digits, '.', '_' and '-', not starting with '.'." >&2
     exit 1
@@ -47,7 +68,20 @@ work="$VAULT_ROOT/$name"
 SETUP_URI_REF="${SETUP_URI_REF:-14141446a14deab3353a8864dee41e44c372d006}"
 SETUP_URI_GENERATOR="https://raw.githubusercontent.com/vrtmrz/obsidian-livesync/$SETUP_URI_REF/utils/flyio/generate_setupuri.ts"
 
-# Print a Setup URI for this vault's first device.
+# Waiting for the first device. The database is polled every POLL_SECONDS.
+# The upload counts as finished once neither the note count nor the database's
+# update_seq has moved for SETTLE_SECONDS: LiveSync uploads in batches with
+# short gaps between them, and 30 seconds of silence is far longer than those
+# gaps. If a slow device does pause longer, nothing breaks: the bridge follows
+# the database's changes feed, so it mirrors the rest as it arrives, and the
+# next timer run commits it to history. The first document must show up within
+# FIRST_UPLOAD_TIMEOUT; after that the script stops and asks for a re-run,
+# which prints a fresh URI (they expire within days).
+POLL_SECONDS="${POLL_SECONDS:-5}"
+SETTLE_SECONDS="${SETTLE_SECONDS:-30}"
+FIRST_UPLOAD_TIMEOUT="${FIRST_UPLOAD_TIMEOUT:-3600}"
+
+# Print a Setup URI for this vault's first device. Only ever to the terminal.
 #
 # id_mode=legacy matters: newer LiveSync defaults to a random per-vault ID key,
 # but livesync-bridge cannot be given that key, so it would compute different
@@ -67,6 +101,81 @@ print_setup_uri() {
         deno run --quiet --minimum-dependency-age=0 --allow-env "$SETUP_URI_GENERATOR"
 }
 
+# "<notes> <update_seq>" for this vault's database; fails if CouchDB could not
+# be asked, so a network blip is neither progress nor silence.
+db_progress() {
+    local info notes
+    info="$(couch GET "$name" 2>/dev/null)" || return 1
+    notes="$(db_note_count "$name")"
+    [[ "$notes" -ge 0 ]] || return 1
+    printf '%s %s\n' "$notes" \
+        "$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["update_seq"])' "$info")"
+}
+
+# Ctrl+C while waiting. Only the database exists at this point, and every
+# step is safe to repeat, so a re-run simply carries on.
+stopped_waiting() {
+    cat <<EOF
+
+Stopped waiting. Nothing has changed apart from the database existing.
+To carry on, run the same command again:
+
+  sudo $SELF $name
+
+If the database is still empty it prints a fresh URI and waits again; if the
+first device has uploaded, it connects the vault straight away.
+EOF
+    exit 130
+}
+
+# Block until the first document arrives, or give up after the timeout.
+wait_for_first_document() {
+    local waited=0 notes
+    echo "==> waiting for the first device to start uploading (Ctrl+C to stop)"
+    while :; do
+        notes="$(db_note_count "$name")"
+        [[ "$notes" -gt 0 ]] && break
+        if [[ $waited -ge $FIRST_UPLOAD_TIMEOUT ]]; then
+            cat <<EOF
+
+No upload after $((FIRST_UPLOAD_TIMEOUT / 60)) minutes, so this stopped waiting. Nothing has
+changed apart from the database existing. When the device is ready, run:
+
+  sudo $SELF $name
+
+It prints a fresh Setup URI and waits again.
+EOF
+            exit 1
+        fi
+        sleep "$POLL_SECONDS"
+        waited=$((waited + POLL_SECONDS))
+    done
+    echo "==> upload started: $notes document(s) so far"
+}
+
+# Block until the database has been quiet for SETTLE_SECONDS. Prints the
+# document count at most every 30 seconds, so a long upload stays readable.
+wait_for_upload_to_settle() {
+    local state last="" quiet=0 shown="" shown_at=-30
+    echo "==> waiting until the upload has been quiet for ${SETTLE_SECONDS}s"
+    while [[ $quiet -lt $SETTLE_SECONDS ]]; do
+        sleep "$POLL_SECONDS"
+        state="$(db_progress)" || continue
+        if [[ "$state" == "$last" ]]; then
+            quiet=$((quiet + POLL_SECONDS))
+        else
+            quiet=0
+            last="$state"
+            if [[ "${state%% *}" != "$shown" && $((SECONDS - shown_at)) -ge 30 ]]; then
+                shown="${state%% *}"
+                shown_at=$SECONDS
+                echo "    $shown document(s) so far"
+            fi
+        fi
+    done
+    echo "==> upload settled at ${last%% *} document(s); connecting the vault to the server"
+}
+
 # A previously removed copy must come back before the vault is re-added, so the
 # bridge finds the files it remembers instead of an empty folder.
 if [[ ! -d "$work" ]] && compgen -G "$REMOVED_ROOT/$name-*" >/dev/null; then
@@ -77,7 +186,7 @@ if [[ ! -d "$work" ]] && compgen -G "$REMOVED_ROOT/$name-*" >/dev/null; then
 fi
 
 # ---------------------------------------------------------------------------
-# Pass 1: the database, then wait for the first device.
+# Steps 1 and 2: the database, then wait for the first device.
 # ---------------------------------------------------------------------------
 if ! vault_configured "$name"; then
     notes="$(db_note_count "$name")"
@@ -107,21 +216,44 @@ away; there is nothing here you need to keep. To connect it (docs/onboarding.md)
   2. Install Self-hosted LiveSync, choose to import a Setup URI, paste the URI
      above, and enter its passphrase. Do not set LiveSync up by hand instead.
   3. Let the first upload finish completely.
-
-Then run this again to connect the vault to the server:
-
-  sudo $0 $name
-
-(Running it before the upload has finished just prints a fresh URI.)
 EOF
-        exit 0
-    fi
+        if [[ $wait_for_device -eq 0 ]]; then
+            cat <<EOF
 
-    echo "==> database '$name' holds $notes document(s); connecting it to the server"
+Then run this again, without --no-wait, to connect the vault to the server:
+
+  sudo $SELF $name
+
+(Running it before the upload has started just prints a fresh URI.)
+EOF
+            exit 0
+        fi
+        cat <<EOF
+
+Keep this window open: this script watches the database and connects the
+vault to the server by itself once the upload has been quiet for ${SETTLE_SECONDS}s.
+Ctrl+C stops waiting without changing anything else; run the same command
+again to carry on.
+
+EOF
+        trap stopped_waiting INT
+        wait_for_first_document
+        wait_for_upload_to_settle
+        trap - INT
+    elif [[ $wait_for_device -eq 1 ]]; then
+        # Already holds notes: a vault brought back after removal, or a re-run
+        # after Ctrl+C. Make sure no device is still mid-upload first.
+        echo "==> database '$name' already holds $notes document(s)"
+        trap stopped_waiting INT
+        wait_for_upload_to_settle
+        trap - INT
+    else
+        echo "==> database '$name' holds $notes document(s); connecting it to the server"
+    fi
 fi
 
 # ---------------------------------------------------------------------------
-# Pass 2: wire the vault in. Every step is safe to repeat.
+# Step 3: wire the vault in. Every step is safe to repeat.
 # ---------------------------------------------------------------------------
 
 # GitHub first: it is the step most likely to fail, and nothing has changed yet.
@@ -144,8 +276,7 @@ if ! vault_configured "$name"; then
     echo "==> added '$name' to VAULTS in $ENV_FILE"
 fi
 
-install -d -m 755 "$work"
-own_by_vault_uid "$work"
+make_vault_dir "$work"
 
 "$BACKEND_DIR/scripts/gen-bridge-config.sh"
 apply_bridge_config

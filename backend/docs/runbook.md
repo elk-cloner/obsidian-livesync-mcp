@@ -156,7 +156,7 @@ git --git-dir=/srv/git/<vault>.git gc --aggressive --prune=now
 ### Adding or removing a vault
 
 ```bash
-sudo ./scripts/add-vault.sh <vault>          # run, onboard first device, run again
+sudo ./scripts/add-vault.sh <vault>          # onboard the first device while it waits
 sudo ./scripts/remove-vault.sh <vault>       # archive; add --purge to delete the DB
 ```
 

@@ -13,7 +13,7 @@
 . "$(dirname -- "${BASH_SOURCE[0]}")/_common.sh"
 
 usage() {
-    echo "Usage: sudo $0 <vault-name> [--purge]" >&2
+    echo "Usage: sudo ./scripts/remove-vault.sh <vault-name> [--purge]" >&2
     exit 2
 }
 

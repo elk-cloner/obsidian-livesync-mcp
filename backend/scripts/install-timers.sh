@@ -16,7 +16,7 @@ dry_run=0
 case "${1:-}" in
     "") ;;
     --dry-run) dry_run=1 ;;
-    *) echo "Usage: sudo $0 [--dry-run]" >&2; exit 2 ;;
+    *) echo "Usage: sudo ./scripts/install-timers.sh [--dry-run]" >&2; exit 2 ;;
 esac
 
 # The path goes unquoted into ExecStart and into a sed replacement, so it must
