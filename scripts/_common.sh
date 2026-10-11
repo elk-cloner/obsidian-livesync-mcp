@@ -217,8 +217,9 @@ apply_bridge_config() {
         echo "==> restarting the bridge"
         compose restart bridge
     else
+        # --build so an updated bridge/Dockerfile is picked up; cached otherwise.
         echo "==> starting the bridge"
-        compose up -d bridge
+        compose up -d --build bridge
     fi
 }
 
