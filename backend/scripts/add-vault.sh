@@ -74,7 +74,7 @@ SETUP_URI_GENERATOR="https://raw.githubusercontent.com/vrtmrz/obsidian-livesync/
 # short gaps between them, and 30 seconds of silence is far longer than those
 # gaps. If a slow device does pause longer, nothing breaks: the bridge follows
 # the database's changes feed, so it mirrors the rest as it arrives, and the
-# next timer run commits it to history. The first document must show up within
+# next timer run commits it to history. The first device must connect within
 # FIRST_UPLOAD_TIMEOUT; after that the script stops and asks for a re-run,
 # which prints a fresh URI (they expire within days).
 POLL_SECONDS="${POLL_SECONDS:-5}"
@@ -122,23 +122,27 @@ To carry on, run the same command again:
 
   sudo $SELF $name
 
-If the database is still empty it prints a fresh URI and waits again; if the
-first device has uploaded, it connects the vault straight away.
+If no device has connected yet it prints a fresh URI and waits again; if the
+first device has connected, it connects the vault straight away.
 EOF
     exit 130
 }
 
-# Block until the first document arrives, or give up after the timeout.
-wait_for_first_document() {
-    local waited=0 notes
-    echo "==> waiting for the first device to start uploading (Ctrl+C to stop)"
+# Block until the first device connects, or give up after the timeout. Any
+# write after the provisioner's counts too: update_seq moving from its value
+# here, even if the device only rewrote the version document.
+wait_for_first_device() {
+    local waited=0 start now
+    start="$(db_progress)" || start=""
+    echo "==> waiting for the first device to connect (Ctrl+C to stop)"
     while :; do
-        notes="$(db_note_count "$name")"
-        [[ "$notes" -gt 0 ]] && break
+        db_device_seen "$name" && break
+        now="$(db_progress)" || now=""
+        [[ -n "$start" && -n "$now" && "${now#* }" != "${start#* }" ]] && break
         if [[ $waited -ge $FIRST_UPLOAD_TIMEOUT ]]; then
             cat <<EOF
 
-No upload after $((FIRST_UPLOAD_TIMEOUT / 60)) minutes, so this stopped waiting. Nothing has
+No device after $((FIRST_UPLOAD_TIMEOUT / 60)) minutes, so this stopped waiting. Nothing has
 changed apart from the database existing. When the device is ready, run:
 
   sudo $SELF $name
@@ -150,7 +154,7 @@ EOF
         sleep "$POLL_SECONDS"
         waited=$((waited + POLL_SECONDS))
     done
-    echo "==> upload started: $notes document(s) so far"
+    echo "==> first device connected: $(db_note_count "$name") note(s) so far"
 }
 
 # Block until the database has been quiet for SETTLE_SECONDS. Prints the
@@ -200,7 +204,7 @@ if ! vault_configured "$name"; then
         notes=0
     fi
 
-    if [[ "$notes" -eq 0 ]]; then
+    if ! db_device_seen "$name"; then
         echo
         echo "Database '$name' is ready. Setup URI for its FIRST device:"
         print_setup_uri
@@ -224,7 +228,7 @@ Then run this again, without --no-wait, to connect the vault to the server:
 
   sudo $SELF $name
 
-(Running it before the upload has started just prints a fresh URI.)
+(Running it before the device has connected just prints a fresh URI.)
 EOF
             exit 0
         fi
@@ -237,13 +241,13 @@ again to carry on.
 
 EOF
         trap stopped_waiting INT
-        wait_for_first_document
+        wait_for_first_device
         wait_for_upload_to_settle
         trap - INT
     elif [[ $wait_for_device -eq 1 ]]; then
-        # Already holds notes: a vault brought back after removal, or a re-run
-        # after Ctrl+C. Make sure no device is still mid-upload first.
-        echo "==> database '$name' already holds $notes document(s)"
+        # A device was already here: a vault brought back after removal, or a
+        # re-run after Ctrl+C. Make sure no device is still mid-upload first.
+        echo "==> a device already connected to '$name'; it holds $notes note(s)"
         trap stopped_waiting INT
         wait_for_upload_to_settle
         trap - INT

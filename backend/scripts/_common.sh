@@ -257,16 +257,33 @@ apply_bridge_config() {
     fi
 }
 
-# Number of note documents in a vault's database (design docs excluded), or
-# -1 if the database does not exist.
+# LiveSync's own bookkeeping document. The provisioner writes it (revision 1)
+# before any device connects, and a connecting device rewrites it. So it is not
+# a note, and only a later revision shows that a device was here.
+LIVESYNC_VERSION_DOC="obsydian_livesync_version"
+
+# Number of note documents in a vault's database (design docs and the version
+# document excluded), or -1 if the database does not exist.
 db_note_count() {
-    local info design
+    local info design version
     if ! info="$(couch GET "$1" 2>/dev/null)"; then
         echo -1
         return 0
     fi
     design="$(couch GET "$1/_design_docs" 2>/dev/null || echo '{"rows": []}')"
+    version="$(couch GET "$1/$LIVESYNC_VERSION_DOC" 2>/dev/null || echo '{}')"
     python3 -c 'import json, sys
-info, design = json.loads(sys.argv[1]), json.loads(sys.argv[2])
-print(info["doc_count"] - len(design.get("rows", [])))' "$info" "$design"
+info, design, version = (json.loads(a) for a in sys.argv[1:4])
+print(info["doc_count"] - len(design.get("rows", [])) - ("_id" in version))' \
+        "$info" "$design" "$version"
+}
+
+# Succeeds once a device has connected to a vault's database: it holds notes,
+# or a device rewrote the version document (an empty vault uploads nothing else).
+db_device_seen() {
+    local rev
+    [[ "$(db_note_count "$1")" -gt 0 ]] && return 0
+    rev="$(couch GET "$1/$LIVESYNC_VERSION_DOC" 2>/dev/null |
+        python3 -c 'import json, sys; print(json.load(sys.stdin)["_rev"])' 2>/dev/null)" || return 1
+    [[ "${rev%%-*}" -ge 2 ]]
 }

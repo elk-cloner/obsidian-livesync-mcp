@@ -63,9 +63,9 @@ has a note; that is expected.
 ### If the wait is interrupted
 
 Ctrl+C while it waits is safe: only the database exists at that point. Run
-the same command again to carry on. If the database is still empty, it prints
-a fresh URI and waits again; if the first device has uploaded, it connects the
-vault straight away. If no upload starts within an hour, it stops by itself
+the same command again to carry on. If no device has connected yet, it prints
+a fresh URI and waits again; if the first device has connected, it connects the
+vault straight away. If no device connects within an hour, it stops by itself
 with the same advice.
 
 For scripts, `--no-wait` keeps the older behaviour: it prints the URI and
