@@ -181,9 +181,9 @@
   <text class="lab" x="1280" y="983">REV 1</text>
   <text class="lab" x="1400" y="983">2026-10-11</text>
   <rect class="solid" x="1060" y="1008" width="34" height="18"/>
-  <text class="ann" x="1102" y="1022">SCRIPT</text>
-  <rect x="1178" y="1008" width="34" height="18" class="hatch"/>
-  <text class="ann" x="1220" y="1022">YOU</text>
+  <text class="ann" x="1102" y="1022">AUTOMATIC</text>
+  <rect x="1196" y="1008" width="34" height="18" class="hatch"/>
+  <text class="ann" x="1238" y="1022">YOU</text>
   <path class="w" d="M1288 1017H1338" marker-end="url(#aw)"/>
   <text class="ann" x="1348" y="1022">data, next step</text>
   <path class="w d" d="M1060 1047H1110" marker-end="url(#aw)"/>

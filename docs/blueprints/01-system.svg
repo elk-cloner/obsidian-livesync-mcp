@@ -88,16 +88,16 @@
     <text class="ann" x="150.0" y="354" text-anchor="middle">livesync</text>
     <text class="ann" x="150" y="404" text-anchor="middle">end-to-end encrypted</text>
     <text class="ann" x="150" y="424" text-anchor="middle">sync over https</text>
-    <rect class="solid" x="60" y="512" width="180" height="110"/>
-    <text class="lab" x="150.0" y="540" text-anchor="middle">CLAUDE.AI</text>
-    <text class="ann" x="150.0" y="564" text-anchor="middle">web · phone</text>
-    <text class="ann" x="150.0" y="584" text-anchor="middle">+ skills</text>
-    <rect class="solid" x="60" y="652" width="180" height="110"/>
-    <text class="lab" x="150.0" y="680" text-anchor="middle">CLAUDE CODE</text>
-    <text class="ann" x="150.0" y="704" text-anchor="middle">vault plugin</text>
-    <text class="ann" x="150.0" y="724" text-anchor="middle">+ connector</text>
-    <text class="ann" x="150" y="788" text-anchor="middle">connector at</text>
-    <text class="code" x="150" y="808" text-anchor="middle">mcp.&lt;domain&gt;/mcp</text>
+    <rect class="solid" x="80" y="512" width="160" height="110"/>
+    <text class="lab" x="160.0" y="540" text-anchor="middle">CLAUDE.AI</text>
+    <text class="ann" x="160.0" y="564" text-anchor="middle">web · phone</text>
+    <text class="ann" x="160.0" y="584" text-anchor="middle">skill zips</text>
+    <rect class="solid" x="80" y="652" width="160" height="110"/>
+    <text class="lab" x="160.0" y="680" text-anchor="middle">CLAUDE CODE</text>
+    <text class="ann" x="160.0" y="704" text-anchor="middle">vault plugin</text>
+    <text class="ann" x="160.0" y="724" text-anchor="middle">+ connector</text>
+    <text class="ann" x="160" y="788" text-anchor="middle">connector at</text>
+    <text class="code" x="160" y="808" text-anchor="middle">mcp.&lt;domain&gt;/mcp</text>
     <rect class="solid" x="325" y="140" width="150" height="620"/>
     <text class="lab" x="400.0" y="168" text-anchor="middle">CADDY</text>
     <text class="ann" x="400.0" y="192" text-anchor="middle">tls</text>
@@ -183,7 +183,9 @@
     <text class="lab" x="387.5" y="933" text-anchor="middle">SKILLS/</text>
     <text class="ann" x="387.5" y="957" text-anchor="middle">13 skills</text>
     <text class="ann" x="387.5" y="977" text-anchor="middle">plugin or zips</text>
-    <path class="w" d="M387 905 L387 842 L228 842 L228 762" marker-end="url(#aw)"/>
+    <path class="w" d="M387 905 L387 842 L54 842 L54 597 L80 597" marker-end="url(#aw)"/>
+    <path class="w" d="M54 737 L80 737" marker-end="url(#aw)"/>
+    <circle class="dot" cx="54" cy="737" r="3.5"/>
     <path class="w" d="M165 1062 L165 1100 L975 1100 L975 760" marker-end="url(#aw)"/>
     <text class="code halo" x="640" y="1090" text-anchor="middle">seed-vault.sh</text>
   </g>
@@ -198,9 +200,9 @@
   <text class="lab" x="1280" y="1083">REV 1</text>
   <text class="lab" x="1400" y="1083">2026-10-11</text>
   <rect class="solid" x="1060" y="1108" width="34" height="18"/>
-  <text class="ann" x="1102" y="1122">SCRIPT</text>
-  <rect x="1178" y="1108" width="34" height="18" class="hatch"/>
-  <text class="ann" x="1220" y="1122">YOU</text>
+  <text class="ann" x="1102" y="1122">AUTOMATIC</text>
+  <rect x="1196" y="1108" width="34" height="18" class="hatch"/>
+  <text class="ann" x="1238" y="1122">YOU</text>
   <path class="w" d="M1288 1117H1338" marker-end="url(#aw)"/>
   <text class="ann" x="1348" y="1122">data, next step</text>
   <path class="w d" d="M1060 1147H1110" marker-end="url(#aw)"/>
