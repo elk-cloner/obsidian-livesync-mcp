@@ -1,0 +1,213 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" width="1600" height="1200" role="img" aria-labelledby="t d">
+  <title id="t">Sheet 1 of 3: system overview of obsidian-livesync-mcp</title>
+  <desc id="d">Devices with Obsidian and Self-hosted LiveSync sync end-to-end encrypted notes over HTTPS through Caddy to CouchDB, which has one database per vault. The bridge copies notes between CouchDB and the mirror, /srv/vaults/&lt;vault&gt;, as plain files. The MCP server reads and writes the mirror for Claude, through the connector at mcp.&lt;domain&gt;/mcp, with Google OAuth and one allowed email. Systemd timers copy the mirror to the history (git, every 15 minutes, optional GitHub push), the backup (rclone to Google Drive, nightly) and run the staleness check (hourly). From the repo, seed-vault.sh copies vault/template into the mirror, and skills/ go to Claude.</desc>
+  <defs>
+    <style>
+    text { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #ffffff; }
+    .bg { fill: #0b3d6e; }
+    .frame { fill: none; stroke: #ffffff; stroke-width: 3; }
+    .margin { fill: none; stroke: #ffffff; stroke-width: 1.2; }
+    .tick { stroke: #ffffff; stroke-width: 1.2; }
+    .lab { font-size: 16px; font-weight: 700; letter-spacing: .05em; }
+    .big { font-size: 18px; font-weight: 700; letter-spacing: .05em; }
+    .ann { font-size: 14px; fill: #c4e2fb; }
+    .code { font-size: 14px; fill: #7fdbff; }
+    .zone { font-size: 15px; font-weight: 700; letter-spacing: .16em; fill: #7fdbff; }
+    .num { font-size: 16px; font-weight: 700; fill: #0b3d6e; }
+    .tbk { font-size: 14px; fill: #c4e2fb; letter-spacing: .08em; }
+    .halo { paint-order: stroke; stroke: #0b3d6e; stroke-width: 5px; stroke-linejoin: round; }
+    .solid { fill: #0b3d6e; stroke: #ffffff; stroke-width: 2; }
+    .hatch { fill: url(#hatch); stroke: #ffffff; stroke-width: 2; }
+    .opt { stroke-dasharray: 8 5; }
+    .hinge { fill: #0b3d6e; stroke: #7fdbff; stroke-width: 3; }
+    .zbox { fill: none; stroke: #7fdbff; stroke-width: 1.4; stroke-dasharray: 10 6; }
+    .zin { fill: none; stroke: #c4e2fb; stroke-width: 1.2; stroke-dasharray: 3 5; }
+    .w { fill: none; stroke: #ffffff; stroke-width: 2; }
+    .c { fill: none; stroke: #7fdbff; stroke-width: 2; }
+    .d { stroke-dasharray: 7 5; }
+    .life { fill: none; stroke: #c4e2fb; stroke-width: 1.5; stroke-dasharray: 2 6; }
+    .dot { fill: #7fdbff; }
+    .callout { fill: #0b3d6e; stroke: #7fdbff; stroke-width: 2; }
+    </style>
+    <pattern id="fine" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0H0V20" fill="none" stroke="#ffffff" stroke-opacity=".07" stroke-width="1"/>
+    </pattern>
+    <pattern id="coarse" width="100" height="100" patternUnits="userSpaceOnUse">
+      <rect width="100" height="100" fill="url(#fine)"/>
+      <path d="M100 0H0V100" fill="none" stroke="#ffffff" stroke-opacity=".16" stroke-width="1"/>
+    </pattern>
+    <pattern id="hatch" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="12" height="12" fill="#0b3d6e"/>
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#ffffff" stroke-opacity=".32" stroke-width="2"/>
+    </pattern>
+    <marker id="aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#ffffff"/>
+    </marker>
+    <marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#7fdbff"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1600" height="1200"/>
+  <rect x="32" y="32" width="1536" height="1136" fill="url(#coarse)"/>
+  <rect class="frame" x="16" y="16" width="1568" height="1168"/>
+  <rect class="margin" x="32" y="32" width="1536" height="1136"/>
+  <path class="tick" d="M200 16V32M200 1168V1184"/>
+  <path class="tick" d="M400 16V32M400 1168V1184"/>
+  <path class="tick" d="M600 16V32M600 1168V1184"/>
+  <path class="tick" d="M800 16V32M800 1168V1184"/>
+  <path class="tick" d="M1000 16V32M1000 1168V1184"/>
+  <path class="tick" d="M1200 16V32M1200 1168V1184"/>
+  <path class="tick" d="M1400 16V32M1400 1168V1184"/>
+  <path class="tick" d="M16 200H32M1568 200H1584"/>
+  <path class="tick" d="M16 400H32M1568 400H1584"/>
+  <path class="tick" d="M16 600H32M1568 600H1584"/>
+  <path class="tick" d="M16 800H32M1568 800H1584"/>
+  <path class="tick" d="M16 1000H32M1568 1000H1584"/>
+  <g id="drawing">
+    <rect class="zbox" x="40" y="70" width="220" height="370"/>
+    <text class="zone halo" x="54" y="94">DEVICES</text>
+    <rect class="zbox" x="40" y="470" width="220" height="350"/>
+    <text class="zone halo" x="54" y="494">CLAUDE</text>
+    <rect class="zbox" x="290" y="70" width="1010" height="750"/>
+    <text class="zone halo" x="304" y="94">SERVER</text>
+    <rect class="zin" x="305" y="112" width="545" height="676"/>
+    <text class="ann halo" x="320" y="776">docker compose</text>
+    <rect class="zbox" x="1320" y="320" width="250" height="310"/>
+    <text class="zone halo" x="1334" y="344">EXTERNAL</text>
+    <rect class="zbox" x="40" y="860" width="460" height="290"/>
+    <text class="zone halo" x="54" y="884">REPO</text>
+    <rect class="solid" x="60" y="112" width="180" height="110"/>
+    <text class="lab" x="150.0" y="140" text-anchor="middle">LAPTOP</text>
+    <text class="ann" x="150.0" y="164" text-anchor="middle">obsidian +</text>
+    <text class="ann" x="150.0" y="184" text-anchor="middle">self-hosted</text>
+    <text class="ann" x="150.0" y="204" text-anchor="middle">livesync</text>
+    <rect class="solid" x="60" y="262" width="180" height="110"/>
+    <text class="lab" x="150.0" y="290" text-anchor="middle">PHONE</text>
+    <text class="ann" x="150.0" y="314" text-anchor="middle">obsidian +</text>
+    <text class="ann" x="150.0" y="334" text-anchor="middle">self-hosted</text>
+    <text class="ann" x="150.0" y="354" text-anchor="middle">livesync</text>
+    <text class="ann" x="150" y="404" text-anchor="middle">end-to-end encrypted</text>
+    <text class="ann" x="150" y="424" text-anchor="middle">sync over https</text>
+    <rect class="solid" x="80" y="512" width="160" height="110"/>
+    <text class="lab" x="160.0" y="540" text-anchor="middle">CLAUDE.AI</text>
+    <text class="ann" x="160.0" y="564" text-anchor="middle">web · phone</text>
+    <text class="ann" x="160.0" y="584" text-anchor="middle">skill zips</text>
+    <rect class="solid" x="80" y="652" width="160" height="110"/>
+    <text class="lab" x="160.0" y="680" text-anchor="middle">CLAUDE CODE</text>
+    <text class="ann" x="160.0" y="704" text-anchor="middle">vault plugin</text>
+    <text class="ann" x="160.0" y="724" text-anchor="middle">+ connector</text>
+    <text class="ann" x="160" y="788" text-anchor="middle">connector at</text>
+    <text class="code" x="160" y="808" text-anchor="middle">mcp.&lt;domain&gt;/mcp</text>
+    <rect class="solid" x="325" y="140" width="150" height="620"/>
+    <text class="lab" x="400.0" y="168" text-anchor="middle">CADDY</text>
+    <text class="ann" x="400.0" y="192" text-anchor="middle">tls</text>
+    <text class="ann" x="400.0" y="212" text-anchor="middle">let&#x27;s encrypt</text>
+    <text class="ann" x="400.0" y="232" text-anchor="middle">80 · 443</text>
+    <text class="code" x="400" y="300" text-anchor="middle">couch.&lt;domain&gt;</text>
+    <text class="code" x="400" y="660" text-anchor="middle">mcp.&lt;domain&gt;</text>
+    <path class="c" d="M240 167 L325 167" marker-end="url(#ac)" marker-start="url(#ac)"/>
+    <path class="c" d="M240 317 L325 317" marker-end="url(#ac)" marker-start="url(#ac)"/>
+    <path class="w" d="M240 567 L325 567" marker-end="url(#aw)"/>
+    <path class="w" d="M240 707 L325 707" marker-end="url(#aw)"/>
+    <rect class="solid" x="545" y="140" width="280" height="120"/>
+    <text class="lab" x="685.0" y="168" text-anchor="middle">COUCHDB</text>
+    <text class="ann" x="685.0" y="192" text-anchor="middle">one database per vault</text>
+    <text class="ann" x="685.0" y="212" text-anchor="middle">encrypted chunks</text>
+    <rect class="solid" x="545" y="340" width="280" height="110"/>
+    <text class="lab" x="685.0" y="368" text-anchor="middle">LIVESYNC-BRIDGE</text>
+    <text class="ann" x="685.0" y="392" text-anchor="middle">uid 1993</text>
+    <text class="ann" x="685.0" y="412" text-anchor="middle">decrypts · encrypts</text>
+    <rect class="solid" x="545" y="540" width="280" height="220"/>
+    <text class="lab" x="685.0" y="568" text-anchor="middle">MCP SERVER</text>
+    <text class="ann" x="685.0" y="592" text-anchor="middle">google oauth</text>
+    <text class="ann" x="685.0" y="612" text-anchor="middle">one allowed email</text>
+    <text class="code" x="685.0" y="632" text-anchor="middle">list_notes</text>
+    <text class="code" x="685.0" y="652" text-anchor="middle">write_note</text>
+    <text class="code" x="685.0" y="672" text-anchor="middle">vault_now</text>
+    <text class="code" x="685.0" y="692" text-anchor="middle">lint_vault  ...</text>
+    <path class="c" d="M475 200 L545 200" marker-end="url(#ac)" marker-start="url(#ac)"/>
+    <path class="w" d="M475 640 L545 640" marker-end="url(#aw)"/>
+    <path class="c" d="M685 260 L685 340" marker-end="url(#ac)" marker-start="url(#ac)"/>
+    <rect class="hinge" x="875" y="340" width="200" height="420"/>
+    <text class="lab" x="975" y="368" text-anchor="middle">MIRROR</text>
+    <text class="code" x="975" y="392" text-anchor="middle">/srv/vaults/</text>
+    <text class="code" x="975" y="412" text-anchor="middle">&lt;vault&gt;</text>
+    <text class="ann" x="975" y="432" text-anchor="middle">plain files</text>
+    <text class="ann" x="975" y="452" text-anchor="middle">owner uid 1993</text>
+    <text class="ann" x="975" y="720" text-anchor="middle">every job</text>
+    <text class="ann" x="975" y="740" text-anchor="middle">reads it</text>
+    <path class="c" d="M825 395 L875 395" marker-end="url(#ac)" marker-start="url(#ac)"/>
+    <path class="w" d="M825 650 L875 650" marker-end="url(#aw)" marker-start="url(#aw)"/>
+    <text class="ann halo" x="850" y="636" text-anchor="middle">r/w</text>
+    <text class="zone halo" x="1100" y="326">SYSTEMD TIMERS</text>
+    <rect class="solid" x="1100" y="340" width="185" height="130"/>
+    <text class="lab" x="1192.5" y="368" text-anchor="middle">HISTORY</text>
+    <text class="ann" x="1192.5" y="392" text-anchor="middle">git · 15 min</text>
+    <text class="code" x="1192.5" y="412" text-anchor="middle">/srv/git/</text>
+    <text class="code" x="1192.5" y="432" text-anchor="middle">&lt;vault&gt;.git</text>
+    <rect class="solid" x="1100" y="500" width="185" height="110"/>
+    <text class="lab" x="1192.5" y="528" text-anchor="middle">BACKUP</text>
+    <text class="ann" x="1192.5" y="552" text-anchor="middle">rclone</text>
+    <text class="ann" x="1192.5" y="572" text-anchor="middle">nightly 03:30</text>
+    <rect class="solid" x="1100" y="640" width="185" height="120"/>
+    <text class="lab" x="1192.5" y="668" text-anchor="middle">STALENESS</text>
+    <text class="ann" x="1192.5" y="692" text-anchor="middle">check</text>
+    <text class="ann" x="1192.5" y="712" text-anchor="middle">hourly</text>
+    <text class="ann" x="1192.5" y="732" text-anchor="middle">stale &gt; 24 h</text>
+    <path class="w d" d="M1075 405 L1100 405" marker-end="url(#aw)"/>
+    <path class="w d" d="M1075 555 L1100 555" marker-end="url(#aw)"/>
+    <path class="w d" d="M1075 700 L1100 700" marker-end="url(#aw)"/>
+    <rect class="solid opt" x="1340" y="350" width="210" height="110"/>
+    <text class="lab" x="1445.0" y="378" text-anchor="middle">GITHUB</text>
+    <text class="ann" x="1445.0" y="402" text-anchor="middle">private repo</text>
+    <text class="ann" x="1445.0" y="422" text-anchor="middle">per vault</text>
+    <text class="ann halo" x="1445" y="482" text-anchor="middle">optional</text>
+    <rect class="solid" x="1340" y="500" width="210" height="110"/>
+    <text class="lab" x="1445.0" y="528" text-anchor="middle">GOOGLE DRIVE</text>
+    <text class="code" x="1445.0" y="552" text-anchor="middle">gdrive:</text>
+    <text class="code" x="1445.0" y="572" text-anchor="middle">ObsidianBackup</text>
+    <path class="w d" d="M1285 405 L1340 405" marker-end="url(#aw)"/>
+    <path class="w d" d="M1285 555 L1340 555" marker-end="url(#aw)"/>
+    <rect class="solid" x="545" y="870" width="280" height="100"/>
+    <text class="lab" x="685.0" y="898" text-anchor="middle">GOOGLE OAUTH</text>
+    <text class="ann" x="685.0" y="922" text-anchor="middle">external sign-in</text>
+    <text class="ann" x="685.0" y="942" text-anchor="middle">gives your email</text>
+    <path class="w" d="M685 760 L685 870" marker-end="url(#aw)" marker-start="url(#aw)"/>
+    <rect class="solid" x="60" y="905" width="210" height="125"/>
+    <text class="lab" x="165.0" y="933" text-anchor="middle">VAULT/TEMPLATE</text>
+    <text class="code" x="165.0" y="957" text-anchor="middle">CLAUDE.md</text>
+    <text class="code" x="165.0" y="977" text-anchor="middle">_templates/</text>
+    <text class="code" x="165.0" y="997" text-anchor="middle">_bases/</text>
+    <text class="ann" x="165" y="1052" text-anchor="middle">schema</text>
+    <rect class="solid" x="295" y="905" width="185" height="125"/>
+    <text class="lab" x="387.5" y="933" text-anchor="middle">SKILLS/</text>
+    <text class="ann" x="387.5" y="957" text-anchor="middle">13 skills</text>
+    <text class="ann" x="387.5" y="977" text-anchor="middle">plugin or zips</text>
+    <path class="w" d="M387 905 L387 842 L54 842 L54 597 L80 597" marker-end="url(#aw)"/>
+    <path class="w" d="M54 737 L80 737" marker-end="url(#aw)"/>
+    <circle class="dot" cx="54" cy="737" r="3.5"/>
+    <path class="w" d="M165 1062 L165 1100 L975 1100 L975 760" marker-end="url(#aw)"/>
+    <text class="code halo" x="640" y="1090" text-anchor="middle">seed-vault.sh</text>
+  </g>
+  <g id="title-block">
+  <rect x="1048" y="972" width="520" height="196" fill="#0b3d6e" stroke="#ffffff" stroke-width="2"/>
+  <path class="margin" d="M1048 1012H1568M1048 1058H1568M1048 1096H1568M1268 1058V1096M1388 1058V1096"/>
+  <text class="tbk" x="1060" y="998">PROJECT</text>
+  <text class="big" x="1168" y="999">OBSIDIAN-LIVESYNC-MCP</text>
+  <text class="tbk" x="1060" y="1041">TITLE</text>
+  <text class="big" x="1168" y="1042">SYSTEM OVERVIEW</text>
+  <text class="lab" x="1060" y="1083">SHEET 1 / 3</text>
+  <text class="lab" x="1280" y="1083">REV 1</text>
+  <text class="lab" x="1400" y="1083">2026-10-11</text>
+  <rect class="solid" x="1060" y="1108" width="34" height="18"/>
+  <text class="ann" x="1102" y="1122">AUTOMATIC</text>
+  <rect x="1196" y="1108" width="34" height="18" class="hatch"/>
+  <text class="ann" x="1238" y="1122">YOU</text>
+  <path class="w" d="M1288 1117H1338" marker-end="url(#aw)"/>
+  <text class="ann" x="1348" y="1122">data, next step</text>
+  <path class="w d" d="M1060 1147H1110" marker-end="url(#aw)"/>
+  <text class="ann" x="1120" y="1152">timer job, optional</text>
+  <path class="c" d="M1310 1147H1360" marker-end="url(#ac)" marker-start="url(#ac)"/>
+  <text class="ann" x="1370" y="1152">two-way sync</text>
+  </g>
+</svg>
