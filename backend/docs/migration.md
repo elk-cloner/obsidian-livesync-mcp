@@ -1,29 +1,28 @@
-# Migrating vaults off Google Drive
+# Move vaults off Google Drive
 
-Read this before adding a vault whose notes currently sync through Google
-Drive. It covers getting the notes out of Drive safely; the vault itself is
-then added the normal way, with [`vaults.md`](vaults.md).
+Read this page before you add a vault whose notes sync through Google Drive
+now. It tells how to get the notes out of Drive safely. Then you add the vault
+in the usual way, with [`vaults.md`](vaults.md).
 
-The one rule: **never point LiveSync at a directory Google Drive is still
-syncing.** Two sync engines writing the same files produce conflict copies
-faster than either can resolve them. Breaking the Drive link comes first,
-always.
+> **Warning:** Do not connect LiveSync to a folder that Google Drive still
+> syncs. Two sync engines that write the same files make conflict copies
+> faster than either engine can resolve them. Always disconnect Drive first.
 
-Do one vault at a time, smallest first as a rehearsal.
+Do one vault at a time. Do the smallest vault first, as a test.
 
-## Per vault
+## For each vault
 
-### 1. Quiesce
+### 1. Stop all changes
 
-- Quit Obsidian on every device.
-- Let Drive finish syncing on the computer that holds the vault — wait for the "up to date" state, not
-  just a quiet icon.
-- Note the file count you expect to end with:
-  ```bash
-  find "<drive-folder>/<vault>" -name '*.md' | wc -l
-  ```
+1. Quit Obsidian on all devices.
+2. Let Drive finish its sync on the computer that holds the vault. Wait for
+   the "up to date" state. A quiet icon is not sufficient.
+3. Write down the number of files that you expect at the end:
+   ```bash
+   find "<drive-folder>/<vault>" -name '*.md' | wc -l
+   ```
 
-### 2. Break the Drive link
+### 2. Disconnect Drive
 
 Copy the vault **out** of the Drive folder:
 
@@ -31,19 +30,22 @@ Copy the vault **out** of the Drive folder:
 cp -a "<drive-folder>/<vault>" ~/Vaults/<vault>
 ```
 
-Copy, don't move — the Drive folder stays as the rollback. Do not delete it
-until a week of clean sync has passed.
+Copy the folder. Do not move it. The Drive folder stays as the rollback copy.
+Do not delete it until the sync works with no problems for one week.
 
 ### 3. Add the vault
 
-Follow [`vaults.md`](vaults.md): run `sudo ./scripts/add-vault.sh <vault>`,
-then, while it waits, open `~/Vaults/<vault>` in Obsidian as a vault for the
-first device and let the full upload finish. Once the upload settles,
-`add-vault.sh` connects the vault and the bridge mirrors it to the server.
+1. Run `sudo ./scripts/add-vault.sh <vault>` ([`vaults.md`](vaults.md)).
+2. While it waits, open `~/Vaults/<vault>` in Obsidian as a vault. This is
+   the first device.
+3. Let the full upload finish.
 
-### 4. Verify against the mirror
+When the upload is quiet, `add-vault.sh` connects the vault. The bridge
+copies it to the mirror on the server.
 
-Once `add-vault.sh` reports the vault as connected:
+### 4. Compare with the mirror
+
+When `add-vault.sh` shows that the vault is connected, do these checks:
 
 ```bash
 # Counts should match what you noted in step 1.
@@ -55,19 +57,22 @@ md5sum ~/Vaults/<vault>/some/note.md
 ssh vps "md5sum /srv/vaults/<vault>/some/note.md"
 ```
 
-A count mismatch is usually hidden files or an in-progress sync. Investigate
-before onboarding more devices — a second device will faithfully replicate
-whatever is wrong.
+The two counts must agree with the number from step 1. Also compare the
+content of some notes, not only the counts.
 
-### 5. Onboard remaining devices
+If the counts do not agree, the cause is usually hidden files or a sync that
+did not finish. Find the cause before you connect more devices. A second
+device copies each problem exactly.
 
-From a fresh Setup URI generated on the first device. Let each one pull down; none of
-them should upload.
+### 5. Connect the other devices
 
-### 6. Repoint anything that read the Drive copy
+Use a new Setup URI from the first device. Let each device download the
+vault. No other device may upload.
 
-The nightly rclone backup writes to `ObsidianBackup/` on Drive, which is a
-**new** location — it must never target the old vault folders. Check:
+### 6. Change all that read the Drive copy
+
+The nightly rclone backup writes to `ObsidianBackup/` on Drive. This is a
+**new** location. It must not write to the old vault folders. Check it:
 
 ```bash
 grep RCLONE_BACKUP_PATH .env
@@ -75,18 +80,18 @@ grep RCLONE_BACKUP_PATH .env
 
 ## Rollback
 
-Within the first week, before deleting anything from Drive:
+In the first week, before you delete anything from Drive:
 
-1. Disable the LiveSync plugin on every device.
-2. Reopen the original vault folder inside Drive.
-3. Remove it from the server: `sudo ./scripts/remove-vault.sh <vault> --purge`,
-   then delete the parked copy under `/srv/vaults-removed/`.
+1. Disable the LiveSync plugin on all devices.
+2. Open the original vault folder in Drive again.
+3. Remove the vault from the server: `sudo ./scripts/remove-vault.sh <vault> --purge`.
+4. Delete the parked copy in `/srv/vaults-removed/`.
 
-Nothing is lost, because the Drive copy was never touched.
+You lose nothing, because nothing changed the Drive copy.
 
-## After all vaults are migrated
+## After you move all vaults
 
-- If Claude reached the vaults through its Google Drive connector, switch it
-  to the MCP connector. The Drive folder is no longer the live vault.
-- The Drive copy under `ObsidianBackup/` is **output only**. Editing it changes
-  nothing and will be overwritten by the next nightly sync.
+- If Claude used its Google Drive connector for the vaults, change to the MCP
+  connector. The Drive folder is not the live vault now.
+- The Drive copy in `ObsidianBackup/` is **output only**. Edits to it change
+  nothing. The next nightly sync overwrites them.

@@ -1,112 +1,156 @@
-# Adding and removing vaults
+# Add and remove vaults
 
-The backend runs with no vaults at all. Vaults are added one at a time, and
-the steps are the same whether the notes are brand new or already exist.
+The backend runs with no vaults. You add the vaults one at a time. The steps
+are the same for new notes and for existing notes.
 
 ## Add a vault
 
-`add-vault.sh` does the whole job in one run. It creates the database, prints
-a Setup URI, waits while you connect the first device, and connects the vault
-to the server once that device has uploaded.
+<img src="../../docs/blueprints/03-add-vault.svg" alt="Sheet 3 of 3, add a vault: you run add-vault.sh; the server makes the database, prints a Setup URI and waits; the first device imports the URI and uploads; after 30 quiet seconds the server connects the vault, makes the first history commit and offers the schema" width="100%">
+
+`add-vault.sh` does all of the work in one run:
+
+1. It makes the database and prints a Setup URI.
+2. It waits while you connect the first device.
+3. When the upload of that device is complete, it connects the vault to the
+   server.
+4. It offers to seed the knowledge vault schema.
 
 ```bash
 sudo ./scripts/add-vault.sh <name>      # 1-3. database, first device, connect
 sudo ./scripts/seed-vault.sh <name>     # 4. new vault: puts the schema in
 ```
 
-Names may use letters, digits, `.`, `_` and `-`, and must not start with `.`.
-The name becomes the CouchDB database, the folder `/srv/vaults/<name>`, the
-history repo and, if GitHub push is on, the GitHub repo.
+The second command is necessary only if you do not accept the offer in step 4.
+
+| Flag | What it does |
+|---|---|
+| (none) | Set up, wait, connect, offer the schema. |
+| `--no-wait` | Set up and print the URI only. Then stop. |
+| `--no-seed` | Do not offer the schema. Print the `seed-vault.sh` command. |
+
+A name can have letters, digits, `.`, `_` and `-`. It must not start with
+`.`. The script uses the name for the CouchDB database, the folder
+`/srv/vaults/<name>` and the history repository. If the GitHub push is on, it
+also uses the name for the GitHub repository.
 
 ### 1. The database and a Setup URI
 
-`add-vault.sh` creates the vault's CouchDB database and prints a Setup URI
-with its one-time passphrase, for the first device. Nothing else changes yet:
-the vault is not in `VAULTS`, so the bridge and timers ignore it. Nothing it
-prints needs to be kept ([`onboarding.md`](onboarding.md) explains why).
+**SCRIPT:** `add-vault.sh` makes the CouchDB database of the vault. It prints
+a Setup URI and its one-time passphrase for the first device.
 
-Then it waits, watching the database. Leave it running while you do step 2.
+Nothing else changes yet. The vault is not in `VAULTS`, so the bridge and
+the timers do not see it. You do not need to keep the text that it prints.
+[`onboarding.md`](onboarding.md) tells why.
+
+Then the script waits and watches the database. Keep it open while you do
+step 2.
 
 ### 2. Connect the first device
 
-On a desktop, follow [`onboarding.md`](onboarding.md) for the first device,
-importing the Setup URI from step 1. Don't set LiveSync up by hand. The only difference between new and
-existing notes is which folder you open in Obsidian:
+**YOU:** on a desktop, follow [`onboarding.md`](onboarding.md) for the first
+device. Import the Setup URI from step 1. Do not set up LiveSync by hand. The
+only difference between new and existing notes is the folder that you open in
+Obsidian:
 
-- **New vault:** create an empty vault in Obsidian.
-- **Existing notes:** open that vault's folder. If it lives in Google Drive,
-  follow [`migration.md`](migration.md) first to copy it out of Drive.
+| Notes | Folder to open |
+|---|---|
+| **New vault** | Make an empty vault in Obsidian. |
+| **Existing notes** | Open the folder of that vault. If it is in Google Drive, first follow [`migration.md`](migration.md) to copy it out of Drive. |
 
 Let the first upload finish completely.
 
-The order matters: the first device writes the database's LiveSync settings,
-and the bridge reads them when it connects. That is why `add-vault.sh` waits.
+The order is important. The first device writes the LiveSync settings of the
+database. The bridge reads them when it connects. If the bridge connects
+first, the settings do not agree. That is why `add-vault.sh` waits.
 
-### 3. Connect it to the server
+### 3. Connect the vault to the server
 
-As soon as documents appear in the database, `add-vault.sh` shows the count
-and waits for the upload to settle: no change for 30 seconds. Then, in the
-same run, it:
+**SCRIPT:** when the first device connects, `add-vault.sh` shows the number
+of documents. It then waits until the upload is quiet: no change for 30
+seconds. Then, in the same run, it does these steps:
 
-1. creates the private GitHub repo, or reuses an existing one (only when
-   `GIT_PUSH=github`; it tells you before creating anything);
-2. adds the name to `VAULTS` in `.env`;
-3. creates `/srv/vaults/<name>`, owned by the containers' uid 1993;
-4. regenerates `bridge/config.json` and starts or restarts the bridge;
-5. waits for the notes to appear in `/srv/vaults/<name>`;
-6. makes the first history commit, and pushes it if GitHub push is on.
+1. If `GIT_PUSH=github`, it makes the private GitHub repository, or uses an
+   existing one. It tells you before it makes a repository.
+2. It adds the name to `VAULTS` in `.env`.
+3. It makes `/srv/vaults/<name>`, owned by uid 1993 of the containers.
+4. It writes `bridge/config.json` again and starts or restarts the bridge.
+5. It waits for the notes to come into `/srv/vaults/<name>`.
+6. It makes the first history commit. If the GitHub push is on, it pushes it.
 
-From then on Claude can see the vault, and the git, backup and staleness timers
-include it. A brand-new empty vault makes the staleness check warn until it
-has a note; that is expected.
+After this, Claude can see the vault. The git, backup and staleness timers
+include it. A new empty vault makes the staleness check show a warning until
+the vault has a note. That is the expected result.
 
-### If the wait is interrupted
+### If you stop the wait
 
-Ctrl+C while it waits is safe: only the database exists at that point. Run
-the same command again to carry on. If no device has connected yet, it prints
-a fresh URI and waits again; if the first device has connected, it connects the
-vault straight away. If no device connects within an hour, it stops by itself
-with the same advice.
+You can stop the wait with Ctrl+C at any time. At that point, only the
+database exists. To continue, run the same command again:
 
-For scripts, `--no-wait` keeps the older behaviour: it prints the URI and
-exits. Run `sudo ./scripts/add-vault.sh <name>` again once the first upload
-has finished, and that run connects the vault.
+| State when you run it again | What the script does |
+|---|---|
+| No device connected | It prints a new URI and waits again. |
+| The first device connected | It checks for 30 seconds that no upload continues, then connects the vault. |
+
+If no device connects in one hour, the script stops itself. It gives the
+same instruction: run the command again.
+
+For automation, `--no-wait` keeps the old behavior: it prints the URI and
+stops. When the first upload is complete, run
+`sudo ./scripts/add-vault.sh <name>` again. That run connects the vault. If
+you run it before the device connects, it prints a new URI.
 
 ### 4. Seed the schema
 
-A new vault starts empty. Put the knowledge vault schema into it:
+A new vault is empty. At the end of the run, if the vault has no root
+`CLAUDE.md`, `add-vault.sh` asks:
+
+```text
+Seed the knowledge vault schema now? [Y/n]
+```
+
+| Answer | Result |
+|---|---|
+| Enter or `Y` | The script runs `seed-vault.sh` for the vault. |
+| `n` | The script prints the command to seed later. |
+
+The script does not ask with `--no-seed`, or if no terminal is connected to
+its input. It prints the command instead. To seed later, run:
 
 ```bash
 sudo ./scripts/seed-vault.sh <name>
 ```
 
-It copies `vault/template` from this repo into the vault folder: the root
-`CLAUDE.md` (the schema), `README.md`, `log.md`, `_templates/` and `_bases/`.
-The bridge pushes the files out and the first device receives them within
-seconds. It refuses to run on a vault that already has a root `CLAUDE.md`, or
-to overwrite any file, so it is safe to try on a vault that has notes.
+`seed-vault.sh` copies `vault/template` from this repository into the vault
+folder. The copy has the root `CLAUDE.md` (the schema), `README.md`,
+`log.md`, `_templates/` and `_bases/`. The bridge pushes the files out, and
+the first device receives them in a few seconds.
 
-When the schema in this repo changes, refresh a vault's copy:
+`seed-vault.sh` refuses to run on a vault that has a root `CLAUDE.md`. It
+also refuses to overwrite a file. Thus you can safely try it on a vault that
+has notes.
+
+When the schema in this repository changes, update the copy in a vault:
 
 ```bash
 sudo ./scripts/seed-vault.sh <name> --upgrade
 ```
 
-That replaces only the root `CLAUDE.md`, `_templates/` and `_bases/`. Areas,
-`log.md`, `README.md` and the current-area marker are never touched. It commits
-history before and after, so the previous files can be restored from git.
+`--upgrade` replaces only the root `CLAUDE.md`, `_templates/` and `_bases/`.
+It does not change the areas, `log.md`, `README.md` or the current-area
+marker. It commits history before and after, so you can restore the old files
+from git.
 
-See [`vault/README.md`](../../vault/README.md) for the schema itself and the
-per-device Obsidian settings.
+[`vault/README.md`](../../vault/README.md) explains the schema and the
+Obsidian settings for each device.
 
 ### 5. Other devices
 
-Onboard them from a fresh Setup URI generated on the first device
-([`onboarding.md`](onboarding.md)). They should download, not upload.
+**YOU:** connect the other devices with a new Setup URI from the first device
+([`onboarding.md`](onboarding.md)). They must download, not upload.
 
-Running `add-vault.sh` on a vault that is already added only re-checks every
-step. That is also how existing vaults get their GitHub repos after you turn
-on GitHub push.
+If you run `add-vault.sh` on a vault that you added before, it only checks
+each step again. Use this to give existing vaults their GitHub repositories
+after you turn on the GitHub push.
 
 ## Remove a vault
 
@@ -115,41 +159,42 @@ sudo ./scripts/remove-vault.sh <name>            # archive, delete nothing
 sudo ./scripts/remove-vault.sh <name> --purge    # also delete the database
 ```
 
-It asks you to type the vault name, then:
+The script asks you to type the vault name. Then it does these steps:
 
 | Step | What happens |
 |---|---|
-| Final snapshot | commits the vault's current state to history (and pushes if GitHub push is on) |
-| Disconnect | removes it from `VAULTS`, regenerates the bridge config, restarts the bridge (or stops it if no vaults are left) |
-| Park the files | moves `/srv/vaults/<name>` to `/srv/vaults-removed/<name>-<timestamp>/`, so Claude no longer sees it |
-| Keep | `/srv/git/<name>.git` and the GitHub repo, untouched |
-| CouchDB database | kept, unless `--purge` (asks again; cannot be undone) |
+| Final snapshot | It commits the current state of the vault to history. If the GitHub push is on, it pushes. |
+| Disconnect | It removes the vault from `VAULTS` and writes the bridge configuration again. It restarts the bridge, or stops it if no vaults remain. |
+| Park the files | It moves `/srv/vaults/<name>` to `/srv/vaults-removed/<name>-<timestamp>/`. Claude cannot see it there. |
+| Keep | It does not touch `/srv/git/<name>.git` and the GitHub repository. |
+| CouchDB database | It keeps the database. With `--purge`, it asks again and deletes it. You cannot undo this. |
 
-The bridge is disconnected **before** the folder moves. A bridge still watching
-the folder would read the move as "every note deleted" and push that to every
-device.
+The script disconnects the bridge **before** it moves the folder. A bridge
+that watches the folder sees the move as "every note deleted". It then sends
+that deletion to all devices.
 
-Then, by hand:
+Then do these steps by hand:
 
-- On each device, disable Self-hosted LiveSync for that vault, or delete the
-  local vault. A device that keeps syncing would recreate it in CouchDB.
-- Nothing to do for Google Drive: the next nightly backup moves the vault's
-  copy into the dated `ObsidianBackup-replaced/` folder.
+1. On each device, disable Self-hosted LiveSync for that vault, or delete the
+   local vault. A device that continues to sync makes the vault again in
+   CouchDB.
+2. For Google Drive, do nothing. The next nightly backup moves the copy of
+   the vault into the dated `ObsidianBackup-replaced/` folder.
 
-### Bringing a removed vault back
+### Bring a removed vault back
 
-Move the parked folder back, then add it as usual:
+Move the parked folder back, then add the vault as usual:
 
 ```bash
 sudo mv /srv/vaults-removed/<name>-<timestamp> /srv/vaults/<name>
 sudo ./scripts/add-vault.sh <name>
 ```
 
-If the database was kept, it still holds the notes, so `add-vault.sh` prints
-no Setup URI: it checks for 30 seconds that nothing is still uploading, then
-connects the vault.
+If you kept the database, it still holds the notes. Then `add-vault.sh`
+prints no Setup URI. It checks for 30 seconds that no upload continues. Then
+it connects the vault.
 
-`add-vault.sh` refuses to re-add a vault while its files are still parked, so
-the bridge never starts from an empty folder it thinks used to be full. To
-start over from scratch instead, delete the parked folder first, and use
-`--purge` when removing so the old database goes too.
+`add-vault.sh` refuses to add a vault again while its files are still
+parked. Thus the bridge does not start from an empty folder that it remembers
+as full. To start again from nothing, delete the parked folder first. Also
+use `--purge` when you remove the vault, so that the old database goes too.
