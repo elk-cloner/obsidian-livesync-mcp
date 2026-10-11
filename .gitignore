@@ -13,7 +13,7 @@ backend/caddy/config/
 # Upstream helper scripts downloaded by backend/scripts/couchdb-provision.sh.
 backend/.cache/
 
-# claude.ai skill zips built by skills/tools/package.
+# claude.ai skill zips built by skills/tools/build.py package.
 /dist/
 
 __pycache__/
