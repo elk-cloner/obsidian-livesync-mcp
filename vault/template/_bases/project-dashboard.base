@@ -1,0 +1,36 @@
+# Copy this to projects/<slug>/<slug>.base and replace <slug> in the filter.
+filters:
+  and:
+    - file.inFolder("projects/<slug>")
+views:
+  - type: table
+    name: Open tasks
+    filters:
+      and:
+        - type == "task"
+        - status != "done"
+    order:
+      - file.name
+      - kind
+      - status
+      - topics
+      - due
+  - type: table
+    name: Decisions
+    filters:
+      and:
+        - type == "decision"
+        - status == "active"
+    order:
+      - file.name
+      - topics
+      - created
+  - type: table
+    name: Records
+    filters:
+      and:
+        - type == "record"
+    order:
+      - date
+      - file.name
+      - kind

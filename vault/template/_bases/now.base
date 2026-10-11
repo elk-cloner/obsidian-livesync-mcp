@@ -1,0 +1,16 @@
+# What I am doing right now, across topics and projects
+filters:
+  and:
+    - type == "task"
+    - status == "doing" || status == "blocked"
+views:
+  - type: table
+    name: Now
+    order:
+      - file.name
+      - kind
+      - status
+      - topics
+      - projects
+      - blocked_by
+      - due

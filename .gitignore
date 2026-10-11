@@ -1,17 +1,22 @@
 # Secrets and per-host configuration. Never commit these.
-.env
-bridge/config.json
-couchdb/local.d/docker.ini
-caddy/data/
-caddy/config/
+backend/.env
+backend/bridge/config.json
+backend/couchdb/local.d/docker.ini
+backend/caddy/data/
+backend/caddy/config/
 
-# Vault content must never land in this repo.
+# Vault content must never land in this repo. vault/ holds only the schema
+# template and the examples.
 /vaults/
 /srv/
+
+# Upstream helper scripts downloaded by backend/scripts/couchdb-provision.sh.
+backend/.cache/
+
+# claude.ai skill zips built by skills/tools/package.
+/dist/
 
 __pycache__/
 *.pyc
 .venv/
-
-# Upstream helper scripts downloaded by scripts/couchdb-provision.sh.
-.cache/
+.DS_Store

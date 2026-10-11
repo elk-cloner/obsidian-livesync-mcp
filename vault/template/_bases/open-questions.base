@@ -1,0 +1,13 @@
+# Open questions, with the tasks they block
+filters:
+  and:
+    - type == "question"
+    - status == "open"
+views:
+  - type: table
+    name: Open questions
+    groupBy: area
+    order:
+      - file.name
+      - blocks
+      - created

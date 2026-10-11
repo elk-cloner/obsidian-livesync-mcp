@@ -1,0 +1,12 @@
+# Concepts flagged for review (by semantic lint or by me)
+filters:
+  and:
+    - type == "concept"
+    - needs_review == true || status == "needs_review"
+views:
+  - type: table
+    name: Needs review
+    order:
+      - file.name
+      - area
+      - updated

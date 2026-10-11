@@ -1,0 +1,18 @@
+[Unit]
+Description=Commit the Obsidian vault mirror to local git history (and GitHub if enabled)
+Documentation=file://@BACKEND_DIR@/docs/runbook.md
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=@BACKEND_DIR@
+# flock keeps a slow push from overlapping the next tick.
+ExecStart=/usr/bin/flock -n /run/vault-git.lock @BACKEND_DIR@/scripts/vault-git-commit.sh
+# systemd sets no HOME for system services; gh keeps root's login (from
+# `sudo gh auth login`) under /root/.config/gh. Only used when GIT_PUSH=github.
+Environment=HOME=/root
+TimeoutStartSec=10min
+
+[Install]
+WantedBy=multi-user.target

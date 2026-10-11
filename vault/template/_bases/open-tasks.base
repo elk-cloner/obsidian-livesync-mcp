@@ -1,0 +1,15 @@
+# All open tasks, grouped by area
+filters:
+  and:
+    - type == "task"
+    - status != "done"
+views:
+  - type: table
+    name: By area
+    groupBy: area
+    order:
+      - file.name
+      - kind
+      - status
+      - due
+      - blocked_by

@@ -1,0 +1,13 @@
+# Gap view: concepts and verified findings that no project uses
+filters:
+  and:
+    - type == "concept" || (type == "finding" && status == "verified")
+    - projects.isEmpty()
+views:
+  - type: table
+    name: Not applied anywhere
+    groupBy: area
+    order:
+      - file.name
+      - type
+      - updated
