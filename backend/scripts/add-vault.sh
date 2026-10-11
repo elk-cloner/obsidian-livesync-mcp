@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Add a vault to the stack, in one run:
 #
-#   sudo ./scripts/add-vault.sh <name>              set up, wait, connect
+#   sudo ./scripts/add-vault.sh <name>              set up, wait, connect, seed
 #   sudo ./scripts/add-vault.sh <name> --no-wait    set up and print the URI only
+#   sudo ./scripts/add-vault.sh <name> --no-seed    do not offer to seed the schema
 #
 #   1. Creates the vault's CouchDB database and prints a Setup URI for the
 #      first device.
@@ -10,6 +11,9 @@
 #      first upload has settled.
 #   3. Wires the vault in: VAULTS in .env, its folder in VAULT_ROOT, local
 #      history, the GitHub repo if GIT_PUSH=github, and the bridge.
+#   4. If the vault has no CLAUDE.md yet, offers to seed the knowledge vault
+#      schema (seed-vault.sh). With --no-seed, or when stdin is not a
+#      terminal, it prints the seed command instead.
 #
 # The wait exists because the first device must upload before the bridge
 # connects: it writes the database's LiveSync settings, which the bridge reads
@@ -28,15 +32,17 @@
 SELF="./scripts/add-vault.sh"
 
 usage() {
-    echo "Usage: sudo $SELF <vault-name> [--no-wait]" >&2
+    echo "Usage: sudo $SELF <vault-name> [--no-wait] [--no-seed]" >&2
     exit 2
 }
 
 wait_for_device=1
+offer_seed=1
 name=""
 for arg in "$@"; do
     case "$arg" in
         --no-wait) wait_for_device=0 ;;
+        --no-seed) offer_seed=0 ;;
         -*) usage ;;
         *)
             if [[ -n "$name" ]]; then usage; fi
@@ -313,8 +319,23 @@ cat <<EOF
 '$name' is connected. Claude can now see it, and the timers include it.
 Onboard your other devices from a fresh Setup URI (docs/onboarding.md);
 they should download, not upload.
+EOF
 
-New vault? Put the knowledge vault schema into it (skip if already seeded):
+# Step 4: the schema, only for a vault that has none yet. Asked only when
+# someone is at the terminal to answer.
+if [[ ! -e "$work/CLAUDE.md" ]]; then
+    if [[ $offer_seed -eq 1 && -t 0 ]]; then
+        echo
+        read -r -p "Seed the knowledge vault schema now? [Y/n] " answer
+        if [[ -z "$answer" || "$answer" == [yY]* ]]; then
+            "$BACKEND_DIR/scripts/seed-vault.sh" "$name"
+            exit 0
+        fi
+    fi
+    cat <<EOF
+
+To put the knowledge vault schema into it later:
 
   sudo ./scripts/seed-vault.sh $name
 EOF
+fi
