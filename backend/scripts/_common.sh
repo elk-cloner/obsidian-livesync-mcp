@@ -19,7 +19,11 @@ if [[ -n "${HOME:-}" && -d "$HOME/.deno/bin" ]]; then
     PATH="$HOME/.deno/bin:$PATH"
 fi
 
-if [[ -f "$ENV_FILE" ]]; then
+if [[ -f "$ENV_FILE" && ! -r "$ENV_FILE" ]]; then
+    # .env is mode 600 and owned by root.
+    echo "ERROR: cannot read $ENV_FILE; run this with sudo." >&2
+    exit 1
+elif [[ -f "$ENV_FILE" ]]; then
     set -a
     # shellcheck disable=SC1090
     . "$ENV_FILE"
@@ -110,25 +114,66 @@ valid_vault_name() {
     [[ "$1" =~ ^[A-Za-z0-9_-][A-Za-z0-9._-]*$ ]]
 }
 
-# Rewrite the VAULTS= line in .env, leaving every other line untouched, and
-# update this process's copy to match.
-set_vaults() {
-    local list="$1"
-    python3 - "$ENV_FILE" "$list" <<'PY'
-import os, re, sys
-path, value = sys.argv[1], sys.argv[2]
+# The value of one setting from .env, as loaded into this process. Empty if
+# it is unset.
+env_value() {
+    printf '%s\n' "${!1:-}"
+}
+
+# Rewrite one KEY= line in .env in place (or append it if missing), leaving
+# every other line untouched, and update this process's copy to match.
+#
+# The value is quoted so that both `. .env` (bash) and docker compose read it
+# back unchanged: bare if it has only safe characters (base64 included),
+# double quotes if it also has spaces, otherwise single quotes. No quoting
+# works for both with a single quote or a newline, so those are refused.
+set_env_value() {
+    local key="$1" value="$2"
+    if [[ ! "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+        echo "ERROR: invalid setting name '$key'" >&2
+        return 1
+    fi
+    if [[ "$value" == *"'"* || "$value" == *$'\n'* ]]; then
+        echo "ERROR: $key must not contain a single quote or a newline" >&2
+        return 1
+    fi
+    python3 - "$ENV_FILE" "$key" "$value" <<'PY'
+import os, re, sys, tempfile
+path, key, value = sys.argv[1:4]
+if re.fullmatch(r"[A-Za-z0-9_./:@+=,%-]*", value):
+    line = f"{key}={value}"
+elif re.fullmatch(r"[A-Za-z0-9_./:@+=,% -]*", value):
+    line = f'{key}="{value}"'
+else:
+    line = f"{key}='{value}'"
 text = open(path).read()
-line = f'VAULTS="{value}"' if value else "VAULTS="
-if re.search(r"^VAULTS=.*$", text, flags=re.M):
-    text = re.sub(r"^VAULTS=.*$", lambda _: line, text, count=1, flags=re.M)
+pattern = rf"^{re.escape(key)}=.*$"
+if re.search(pattern, text, flags=re.M):
+    text = re.sub(pattern, lambda _: line, text, count=1, flags=re.M)
 else:
     text = text.rstrip("\n") + "\n" + line + "\n"
-mode = os.stat(path).st_mode & 0o777
-with open(path, "w") as handle:
-    handle.write(text)
-os.chmod(path, mode)
+# Write a private temporary file next to .env and rename it over: a crash
+# never leaves a half-written .env, and the secrets are never world-readable.
+info = os.stat(path)
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), prefix=".env.")
+try:
+    with os.fdopen(fd, "w") as handle:
+        handle.write(text)
+    os.chmod(tmp, info.st_mode & 0o777)
+    if os.geteuid() == 0:
+        os.chown(tmp, info.st_uid, info.st_gid)
+    os.replace(tmp, path)
+except BaseException:
+    os.unlink(tmp)
+    raise
 PY
-    VAULTS="$list"
+    printf -v "$key" '%s' "$value"
+    export "${key?}"
+}
+
+# Rewrite the VAULTS= line in .env and this process's copy.
+set_vaults() {
+    set_env_value VAULTS "$1"
 }
 
 # curl against CouchDB through Caddy, the same endpoint devices use.
