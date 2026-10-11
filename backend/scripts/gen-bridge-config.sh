@@ -66,6 +66,5 @@ own_by_vault_uid "$OUT"
 echo "Mode set to 600$([[ $EUID -eq 0 ]] && echo ", owned by uid $VAULT_UID") -- this file contains the E2EE passphrase."
 
 for vault in $(vault_list); do
-    install -d -m 755 "$VAULT_ROOT/$vault"
-    own_by_vault_uid "$VAULT_ROOT/$vault"
+    make_vault_dir "$VAULT_ROOT/$vault"
 done

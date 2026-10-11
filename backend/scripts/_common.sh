@@ -64,6 +64,30 @@ own_by_vault_uid() {
     fi
 }
 
+# Run a command as the containers' uid, so whatever it creates inside a vault
+# folder belongs to the bridge from the first instant. The bridge watches the
+# whole folder, dotfiles included, and one file it cannot read (even a
+# root-only staging file that exists for a moment) kills its watcher with
+# EACCES until the bridge is restarted. Runs the command unchanged when not
+# root (local testing).
+as_vault_uid() {
+    if [[ $EUID -eq 0 ]]; then
+        setpriv --reuid="$VAULT_UID" --regid="$VAULT_UID" --clear-groups -- "$@"
+    else
+        "$@"
+    fi
+}
+
+# Create a vault directory (or fix an existing one), owned by the containers'
+# uid as it is created rather than chowned afterwards.
+make_vault_dir() {
+    if [[ $EUID -eq 0 ]]; then
+        install -d -m 755 -o "$VAULT_UID" -g "$VAULT_UID" "$@"
+    else
+        install -d -m 755 "$@"
+    fi
+}
+
 # One vault per line. No vaults is a normal state, not an error: the backend
 # runs without any, and add-vault.sh fills this in.
 vault_list() {

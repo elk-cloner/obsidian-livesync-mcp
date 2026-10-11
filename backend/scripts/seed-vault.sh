@@ -22,7 +22,7 @@
 . "$(dirname -- "${BASH_SOURCE[0]}")/_common.sh"
 
 usage() {
-    echo "Usage: sudo $0 <vault-name> [--upgrade]" >&2
+    echo "Usage: sudo ./scripts/seed-vault.sh <vault-name> [--upgrade]" >&2
     exit 2
 }
 
@@ -59,7 +59,7 @@ schema_version() {
 # Template files to copy, relative to the template root, for the given mode.
 template_files() {
     (
-        cd "$TEMPLATE"
+        cd "$TEMPLATE" || exit 1
         if [[ "$mode" == "seed" ]]; then
             find . -path ./.obsidian -prune -o -type f -print
         else
@@ -70,24 +70,32 @@ template_files() {
 }
 
 # Copy one file into the vault the way the MCP server writes: stage it under a
-# dot-prefixed name in the target folder (hidden files are outside the bridge's
-# sync scope), then rename. The bridge never sees a half-written note.
+# dot-prefixed name in the target folder, then rename, so the bridge never
+# sees a half-written note. Root reads the template, but everything inside the
+# vault (folders, the staging file, the rename) is done as the containers' uid:
+# the bridge watches dotfiles too, and a root-only staging file, even for a
+# moment, kills its watcher with EACCES (see as_vault_uid in _common.sh).
 place() {
-    local rel="$1" src="$TEMPLATE/$1" dest="$work/$1" dir staged
+    local rel="$1" src="$TEMPLATE/$1" dest="$work/$1" dir
     dir="$(dirname -- "$dest")"
-    install -d -m 755 "$dir"
-    staged="$(mktemp "$dir/.seed-vault-XXXXXX")"
-    cat "$src" > "$staged"
-    chmod 644 "$staged"
-    mv -f "$staged" "$dest"
+    as_vault_uid install -d -m 755 "$dir"
+    # shellcheck disable=SC2016  # expanded by the inner sh, not here
+    as_vault_uid sh -c 'staged="$(mktemp "$1/.seed-vault-XXXXXX")" &&
+        cat > "$staged" && chmod 644 "$staged" && mv -f "$staged" "$2"' \
+        sh "$dir" "$dest" < "$src"
 }
 
 files="$(template_files)"
 
+# place() writes as the containers' uid, so it needs every existing folder in
+# the vault to be theirs. They should be already; this repairs anything an
+# older version of this script left owned by root.
+own_by_vault_uid -R "$work"
+
 if [[ "$mode" == "seed" ]]; then
     if [[ -e "$work/CLAUDE.md" ]]; then
         echo "ERROR: $work already has a CLAUDE.md. To refresh the schema files, run:" >&2
-        echo "  sudo $0 $name --upgrade" >&2
+        echo "  sudo ./scripts/seed-vault.sh $name --upgrade" >&2
         exit 1
     fi
     conflicts=()
@@ -108,7 +116,7 @@ if [[ "$mode" == "seed" ]]; then
     # The first log line records when the vault was seeded, in UTC like every
     # other time in the vault.
     now="$(date -u '+%Y-%m-%d %H:%M')"
-    python3 - "$work/log.md" "$now" <<'PY'
+    as_vault_uid python3 - "$work/log.md" "$now" <<'PY'
 import sys
 path, now = sys.argv[1], sys.argv[2]
 text = open(path, encoding="utf-8").read().replace("YYYY-MM-DD HH:MM | seed-vault", f"{now} | seed-vault", 1)
@@ -119,7 +127,7 @@ PY
     echo "==> seeded $work with $count file(s), schema version $(schema_version "$TEMPLATE/CLAUDE.md")"
 else
     if [[ ! -f "$work/CLAUDE.md" ]]; then
-        echo "ERROR: $work has no CLAUDE.md yet; seed it first: sudo $0 $name" >&2
+        echo "ERROR: $work has no CLAUDE.md yet; seed it first: sudo ./scripts/seed-vault.sh $name" >&2
         exit 1
     fi
     old_version="$(schema_version "$work/CLAUDE.md")"
@@ -143,7 +151,6 @@ else
     fi
 fi
 
-own_by_vault_uid -R "$work"
 history_commit "$name"
 if github_enabled; then
     history_push "$name"
