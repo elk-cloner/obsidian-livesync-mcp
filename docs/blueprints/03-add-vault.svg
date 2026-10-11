@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1486" width="1600" height="1486" role="img" aria-labelledby="t d">
+  <title id="t">Sheet 3 of 3: add a vault with add-vault.sh</title>
+  <desc id="d">A sequence with three lifelines: you, the server that runs add-vault.sh, and the device that runs Obsidian. You run sudo ./scripts/add-vault.sh &lt;name&gt;. The server creates the database, and the provisioner writes the LiveSync version document. The server prints a Setup URI and a one-time passphrase, and waits. You import the Setup URI on the first device. The device writes the LiveSync settings into the database and uploads its notes. The server sees the device: notes, or a rewritten version document. It waits until the upload is quiet for 30 seconds. It adds the vault to VAULTS, starts the bridge, and the mirror fills. It makes the first history commit and prints the next step, seed-vault.sh. You run seed-vault.sh. The schema goes into the mirror, and the bridge sends the files to the device. Callout: the first device writes the LiveSync settings of the vault, and the bridge reads them. If the bridge connects first, the settings do not match.</desc>
+  <defs>
+    <style>
+    text { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #ffffff; }
+    .bg { fill: #0b3d6e; }
+    .frame { fill: none; stroke: #ffffff; stroke-width: 3; }
+    .margin { fill: none; stroke: #ffffff; stroke-width: 1.2; }
+    .tick { stroke: #ffffff; stroke-width: 1.2; }
+    .lab { font-size: 16px; font-weight: 700; letter-spacing: .05em; }
+    .big { font-size: 18px; font-weight: 700; letter-spacing: .05em; }
+    .ann { font-size: 14px; fill: #c4e2fb; }
+    .code { font-size: 14px; fill: #7fdbff; }
+    .zone { font-size: 15px; font-weight: 700; letter-spacing: .16em; fill: #7fdbff; }
+    .num { font-size: 16px; font-weight: 700; fill: #0b3d6e; }
+    .tbk { font-size: 14px; fill: #c4e2fb; letter-spacing: .08em; }
+    .halo { paint-order: stroke; stroke: #0b3d6e; stroke-width: 5px; stroke-linejoin: round; }
+    .solid { fill: #0b3d6e; stroke: #ffffff; stroke-width: 2; }
+    .hatch { fill: url(#hatch); stroke: #ffffff; stroke-width: 2; }
+    .opt { stroke-dasharray: 8 5; }
+    .hinge { fill: #0b3d6e; stroke: #7fdbff; stroke-width: 3; }
+    .zbox { fill: none; stroke: #7fdbff; stroke-width: 1.4; stroke-dasharray: 10 6; }
+    .zin { fill: none; stroke: #c4e2fb; stroke-width: 1.2; stroke-dasharray: 3 5; }
+    .w { fill: none; stroke: #ffffff; stroke-width: 2; }
+    .c { fill: none; stroke: #7fdbff; stroke-width: 2; }
+    .d { stroke-dasharray: 7 5; }
+    .life { fill: none; stroke: #c4e2fb; stroke-width: 1.5; stroke-dasharray: 2 6; }
+    .dot { fill: #7fdbff; }
+    .callout { fill: #0b3d6e; stroke: #7fdbff; stroke-width: 2; }
+    </style>
+    <pattern id="fine" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0H0V20" fill="none" stroke="#ffffff" stroke-opacity=".07" stroke-width="1"/>
+    </pattern>
+    <pattern id="coarse" width="100" height="100" patternUnits="userSpaceOnUse">
+      <rect width="100" height="100" fill="url(#fine)"/>
+      <path d="M100 0H0V100" fill="none" stroke="#ffffff" stroke-opacity=".16" stroke-width="1"/>
+    </pattern>
+    <pattern id="hatch" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="12" height="12" fill="#0b3d6e"/>
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#ffffff" stroke-opacity=".32" stroke-width="2"/>
+    </pattern>
+    <marker id="aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#ffffff"/>
+    </marker>
+    <marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#7fdbff"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1600" height="1486"/>
+  <rect x="32" y="32" width="1536" height="1422" fill="url(#coarse)"/>
+  <rect class="frame" x="16" y="16" width="1568" height="1454"/>
+  <rect class="margin" x="32" y="32" width="1536" height="1422"/>
+  <path class="tick" d="M200 16V32M200 1454V1470"/>
+  <path class="tick" d="M400 16V32M400 1454V1470"/>
+  <path class="tick" d="M600 16V32M600 1454V1470"/>
+  <path class="tick" d="M800 16V32M800 1454V1470"/>
+  <path class="tick" d="M1000 16V32M1000 1454V1470"/>
+  <path class="tick" d="M1200 16V32M1200 1454V1470"/>
+  <path class="tick" d="M1400 16V32M1400 1454V1470"/>
+  <path class="tick" d="M16 200H32M1568 200H1584"/>
+  <path class="tick" d="M16 400H32M1568 400H1584"/>
+  <path class="tick" d="M16 600H32M1568 600H1584"/>
+  <path class="tick" d="M16 800H32M1568 800H1584"/>
+  <path class="tick" d="M16 1000H32M1568 1000H1584"/>
+  <path class="tick" d="M16 1200H32M1568 1200H1584"/>
+  <g id="drawing">
+    <path class="life" d="M230 134V1216"/>
+    <rect x="100" y="64" width="260" height="70" fill="#0b3d6e"/>
+    <rect class="hatch" x="100" y="64" width="260" height="70"/>
+    <text class="lab halo" x="230.0" y="92" text-anchor="middle">YOU</text>
+    <text class="ann halo" x="230.0" y="116" text-anchor="middle">at the terminal</text>
+    <path class="life" d="M760 134V1216"/>
+    <rect class="solid" x="630" y="64" width="260" height="70"/>
+    <text class="lab" x="760.0" y="92" text-anchor="middle">SERVER</text>
+    <text class="code" x="760.0" y="116" text-anchor="middle">add-vault.sh</text>
+    <path class="life" d="M1290 134V1216"/>
+    <rect class="solid" x="1160" y="64" width="260" height="70"/>
+    <text class="lab" x="1290.0" y="92" text-anchor="middle">DEVICE</text>
+    <text class="ann" x="1290.0" y="116" text-anchor="middle">obsidian + livesync</text>
+    <rect x="85.0" y="168" width="290" height="90" fill="#0b3d6e"/>
+    <rect class="hatch" x="85.0" y="168" width="290" height="90"/>
+    <text class="lab halo" x="230.0" y="195" text-anchor="middle">RUN THE SCRIPT</text>
+    <text class="code halo" x="230.0" y="219" text-anchor="middle">sudo ./scripts/</text>
+    <text class="code halo" x="230.0" y="239" text-anchor="middle">add-vault.sh &lt;name&gt;</text>
+    <circle cx="85.0" cy="168" r="15" fill="#7fdbff"/>
+    <text class="num" x="85.0" y="174" text-anchor="middle">1</text>
+    <path class="w" d="M375.0 236 L615.0 236" marker-end="url(#aw)"/>
+    <text class="code halo" x="495.0" y="227" text-anchor="middle">&lt;name&gt;</text>
+    <rect class="solid" x="615.0" y="214" width="290" height="90"/>
+    <text class="lab" x="760.0" y="241" text-anchor="middle">CREATE THE DATABASE</text>
+    <text class="ann" x="760.0" y="265" text-anchor="middle">the provisioner writes</text>
+    <text class="ann" x="760.0" y="285" text-anchor="middle">livesync&#x27;s version document</text>
+    <circle cx="615.0" cy="214" r="15" fill="#7fdbff"/>
+    <text class="num" x="615.0" y="220" text-anchor="middle">2</text>
+    <rect class="solid" x="615.0" y="326" width="290" height="90"/>
+    <text class="lab" x="760.0" y="353" text-anchor="middle">PRINT A SETUP URI</text>
+    <text class="ann" x="760.0" y="377" text-anchor="middle">+ one-time passphrase</text>
+    <text class="ann" x="760.0" y="397" text-anchor="middle">then wait for a device</text>
+    <circle cx="615.0" cy="326" r="15" fill="#7fdbff"/>
+    <text class="num" x="615.0" y="332" text-anchor="middle">3</text>
+    <path class="w" d="M615.0 394 L375.0 394" marker-end="url(#aw)"/>
+    <text class="ann halo" x="495.0" y="385" text-anchor="middle">setup uri + passphrase</text>
+    <rect x="85.0" y="372" width="290" height="70" fill="#0b3d6e"/>
+    <rect class="hatch" x="85.0" y="372" width="290" height="70"/>
+    <text class="lab halo" x="230.0" y="399" text-anchor="middle">IMPORT THE SETUP URI</text>
+    <text class="ann halo" x="230.0" y="423" text-anchor="middle">on the first device</text>
+    <circle cx="85.0" cy="372" r="15" fill="#7fdbff"/>
+    <text class="num" x="85.0" y="378" text-anchor="middle">4</text>
+    <path class="w" d="M375.0 420 L1145.0 420" marker-end="url(#aw)"/>
+    <text class="ann halo" x="1025" y="411" text-anchor="middle">setup uri + passphrase</text>
+    <rect class="solid" x="1145.0" y="398" width="290" height="90"/>
+    <text class="lab" x="1290.0" y="425" text-anchor="middle">WRITE THE SETTINGS</text>
+    <text class="ann" x="1290.0" y="449" text-anchor="middle">livesync settings</text>
+    <text class="ann" x="1290.0" y="469" text-anchor="middle">into the database</text>
+    <circle cx="1145.0" cy="398" r="15" fill="#7fdbff"/>
+    <text class="num" x="1145.0" y="404" text-anchor="middle">5</text>
+    <rect class="solid" x="1145.0" y="510" width="290" height="70"/>
+    <text class="lab" x="1290.0" y="537" text-anchor="middle">UPLOAD THE NOTES</text>
+    <text class="ann" x="1290.0" y="561" text-anchor="middle">first full upload</text>
+    <circle cx="1145.0" cy="510" r="15" fill="#7fdbff"/>
+    <text class="num" x="1145.0" y="516" text-anchor="middle">6</text>
+    <path class="c" d="M1145.0 558 L905.0 558" marker-end="url(#ac)"/>
+    <text class="ann halo" x="1025.0" y="549" text-anchor="middle">notes</text>
+    <rect class="solid" x="615.0" y="536" width="290" height="90"/>
+    <text class="lab" x="760.0" y="563" text-anchor="middle">SEE THE DEVICE</text>
+    <text class="ann" x="760.0" y="587" text-anchor="middle">notes, or a rewritten</text>
+    <text class="ann" x="760.0" y="607" text-anchor="middle">version document</text>
+    <circle cx="615.0" cy="536" r="15" fill="#7fdbff"/>
+    <text class="num" x="615.0" y="542" text-anchor="middle">7</text>
+    <rect class="solid" x="615.0" y="648" width="290" height="70"/>
+    <text class="lab" x="760.0" y="675" text-anchor="middle">WAIT FOR QUIET</text>
+    <text class="ann" x="760.0" y="699" text-anchor="middle">no change for 30 s</text>
+    <circle cx="615.0" cy="648" r="15" fill="#7fdbff"/>
+    <text class="num" x="615.0" y="654" text-anchor="middle">8</text>
+    <rect class="solid" x="615.0" y="740" width="290" height="110"/>
+    <text class="lab" x="760.0" y="767" text-anchor="middle">CONNECT THE VAULT</text>
+    <text class="code" x="760.0" y="791" text-anchor="middle">add to VAULTS</text>
+    <text class="ann" x="760.0" y="811" text-anchor="middle">start the bridge</text>
+    <text class="ann" x="760.0" y="831" text-anchor="middle">the mirror fills</text>
+    <circle cx="615.0" cy="740" r="15" fill="#7fdbff"/>
+    <text class="num" x="615.0" y="746" text-anchor="middle">9</text>
+    <rect class="solid" x="615.0" y="872" width="290" height="70"/>
+    <text class="lab" x="760.0" y="899" text-anchor="middle">FIRST HISTORY COMMIT</text>
+    <text class="code" x="760.0" y="923" text-anchor="middle">/srv/git/&lt;name&gt;.git</text>
+    <circle cx="615.0" cy="872" r="15" fill="#7fdbff"/>
+    <text class="num" x="615.0" y="878" text-anchor="middle">10</text>
+    <rect class="solid" x="615.0" y="964" width="290" height="70"/>
+    <text class="lab" x="760.0" y="991" text-anchor="middle">PRINT THE NEXT STEP</text>
+    <text class="code" x="760.0" y="1015" text-anchor="middle">seed-vault.sh &lt;name&gt;</text>
+    <circle cx="615.0" cy="964" r="15" fill="#7fdbff"/>
+    <text class="num" x="615.0" y="970" text-anchor="middle">11</text>
+    <path class="w" d="M615.0 1012 L375.0 1012" marker-end="url(#aw)"/>
+    <text class="ann halo" x="495.0" y="1003" text-anchor="middle">seed the schema?</text>
+    <rect x="85.0" y="990" width="290" height="90" fill="#0b3d6e"/>
+    <rect class="hatch" x="85.0" y="990" width="290" height="90"/>
+    <text class="lab halo" x="230.0" y="1017" text-anchor="middle">SEED THE SCHEMA</text>
+    <text class="code halo" x="230.0" y="1041" text-anchor="middle">sudo ./scripts/</text>
+    <text class="code halo" x="230.0" y="1061" text-anchor="middle">seed-vault.sh &lt;name&gt;</text>
+    <circle cx="85.0" cy="990" r="15" fill="#7fdbff"/>
+    <text class="num" x="85.0" y="996" text-anchor="middle">12</text>
+    <path class="w" d="M375.0 1058 L615.0 1058" marker-end="url(#aw)"/>
+    <rect class="solid" x="615.0" y="1056" width="290" height="90"/>
+    <text class="lab" x="760.0" y="1083" text-anchor="middle">COPY THE SCHEMA</text>
+    <text class="ann" x="760.0" y="1107" text-anchor="middle">into the mirror</text>
+    <text class="ann" x="760.0" y="1127" text-anchor="middle">the bridge sends it</text>
+    <circle cx="615.0" cy="1056" r="15" fill="#7fdbff"/>
+    <text class="num" x="615.0" y="1062" text-anchor="middle">13</text>
+    <path class="c" d="M905.0 1124 L1145.0 1124" marker-end="url(#ac)"/>
+    <text class="ann halo" x="1025.0" y="1115" text-anchor="middle">schema files</text>
+    <rect class="solid" x="1145.0" y="1102" width="290" height="90"/>
+    <text class="lab" x="1290.0" y="1129" text-anchor="middle">FILES ARRIVE</text>
+    <text class="code" x="1290.0" y="1153" text-anchor="middle">CLAUDE.md</text>
+    <text class="code" x="1290.0" y="1173" text-anchor="middle">_templates/  _bases/</text>
+    <circle cx="1145.0" cy="1102" r="15" fill="#7fdbff"/>
+    <text class="num" x="1145.0" y="1108" text-anchor="middle">14</text>
+    <text class="ann" x="929.0" y="352">ctrl+c is safe here:</text>
+    <text class="ann" x="929.0" y="372">run it again to resume</text>
+    <rect class="callout" x="60" y="1244" width="640" height="196"/>
+    <rect x="60" y="1244" width="10" height="196" fill="#7fdbff"/>
+    <text class="big" x="90" y="1282">WHY THE DEVICE COMES FIRST</text>
+    <text class="lab" x="90" y="1322">The first device writes the LiveSync</text>
+    <text class="lab" x="90" y="1348">settings of the vault. The bridge reads them.</text>
+    <text class="lab" x="90" y="1374">If the bridge connects first, the settings</text>
+    <text class="lab" x="90" y="1400">do not match.</text>
+  </g>
+  <g id="title-block">
+  <rect x="1048" y="1258" width="520" height="196" fill="#0b3d6e" stroke="#ffffff" stroke-width="2"/>
+  <path class="margin" d="M1048 1298H1568M1048 1344H1568M1048 1382H1568M1268 1344V1382M1388 1344V1382"/>
+  <text class="tbk" x="1060" y="1284">PROJECT</text>
+  <text class="big" x="1168" y="1285">OBSIDIAN-LIVESYNC-MCP</text>
+  <text class="tbk" x="1060" y="1327">TITLE</text>
+  <text class="big" x="1168" y="1328">ADD A VAULT</text>
+  <text class="lab" x="1060" y="1369">SHEET 3 / 3</text>
+  <text class="lab" x="1280" y="1369">REV 1</text>
+  <text class="lab" x="1400" y="1369">2026-10-11</text>
+  <rect class="solid" x="1060" y="1394" width="34" height="18"/>
+  <text class="ann" x="1102" y="1408">SCRIPT</text>
+  <rect x="1178" y="1394" width="34" height="18" class="hatch"/>
+  <text class="ann" x="1220" y="1408">YOU</text>
+  <path class="w" d="M1288 1403H1338" marker-end="url(#aw)"/>
+  <text class="ann" x="1348" y="1408">data, next step</text>
+  <path class="w d" d="M1060 1433H1110" marker-end="url(#aw)"/>
+  <text class="ann" x="1120" y="1438">timer job, optional</text>
+  <path class="c" d="M1310 1433H1360" marker-end="url(#ac)" marker-start="url(#ac)"/>
+  <text class="ann" x="1370" y="1438">two-way sync</text>
+  </g>
+</svg>
